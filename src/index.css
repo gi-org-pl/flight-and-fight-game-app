@@ -1,6 +1,32 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap");
+@import url("https://fonts.googleapis.com/css?family=Press+Start+2P");
+@import url("https://unpkg.com/nes.css@2.3.0/css/nes.min.css");
 @import "tailwindcss";
 
+html,
+body,
+pre,
+code,
+kbd,
+samp {
+  font-family: "Press Start 2P";
+}
+
 :root {
-  --font-family: "Roboto", ui-sans-serif, system-ui, sans-serif;
+  --color-blush: #f9c5c4;
+  --color-rose: #efa9c5;
+  --color-orchid: #d1a8d9;
+  --color-lavender: #ae9ee1;
+  --color-periwinkle: #939adf;
+}
+
+@theme {
+  --color-blush: var(--color-blush);
+  --color-rose: var(--color-rose);
+  --color-orchid: var(--color-orchid);
+  --color-lavender: var(--color-lavender);
+  --color-periwinkle: var(--color-periwinkle);
+}
+
+.nes-container.is-dark {
+  background: var(--color-periwinkle);
 }

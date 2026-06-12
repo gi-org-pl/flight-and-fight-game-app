@@ -6,7 +6,7 @@ export default function App() {
   return (
     <html lang="en">
       <head>
-        <title>Flight or Fight Game</title>
+        <title>Flight or Fight | Generacja Innowacja</title>
       </head>
       <body>
         <Outlet />
