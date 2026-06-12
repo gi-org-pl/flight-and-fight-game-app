@@ -10,9 +10,7 @@ describe("getStatus", () => {
   describe("when the API returns a valid status", () => {
     it("requests the root path and returns the parsed status", async () => {
       const data = { status: "OK", version: "1.0.0" };
-      const getSpy = vi
-        .spyOn(apiClient, "get")
-        .mockResolvedValue({ data });
+      const getSpy = vi.spyOn(apiClient, "get").mockResolvedValue({ data });
 
       const result = await getStatus();
 

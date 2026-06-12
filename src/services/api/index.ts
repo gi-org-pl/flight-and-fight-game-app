@@ -7,15 +7,19 @@ export {
   type GetSessionResponse,
   getSessionResponseSchema,
   type SessionCredentialsResponse,
-  sessionCredentialsResponseSchema,
   type SessionState,
+  sessionCredentialsResponseSchema,
   sessionStateSchema,
 } from "@/services/api/schemas/session";
 export {
   type StatusResponse,
   statusResponseSchema,
 } from "@/services/api/schemas/status";
-export { createSession, getSession, joinSession } from "@/services/api/sessions";
+export {
+  createSession,
+  getSession,
+  joinSession,
+} from "@/services/api/sessions";
 export { getStatus } from "@/services/api/status";
 export { ApiError, type ApiErrorParams } from "@/services/api/utils/apiError";
 export {
