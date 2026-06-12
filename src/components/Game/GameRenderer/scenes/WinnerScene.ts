@@ -17,9 +17,9 @@ export class WinnerScene extends Phaser.Scene {
 
   create(data: WinnerSceneData): void {
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 60, "Winner", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 30, "Winner", {
         fontFamily: GAME_FONT,
-        fontSize: "32px",
+        fontSize: "18px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
@@ -27,12 +27,12 @@ export class WinnerScene extends Phaser.Scene {
     this.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, data.winner, {
         fontFamily: GAME_FONT,
-        fontSize: "24px",
+        fontSize: "14px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
 
-    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 90, "Play Again", {
+    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 45, "Play Again", {
       fill: GAME_PALETTE.ROSE,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });

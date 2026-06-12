@@ -10,6 +10,7 @@ import {
 } from "../GameRenderer.constants";
 import type { CharacterSelectSceneData } from "../GameRenderer.types";
 import { createButton } from "../utils/createButton";
+import { createPanel } from "../utils/createPanel";
 import { toggleSelection } from "../utils/toggleSelection";
 import {
   CHARACTER_SELECT_SCENE_KEY,
@@ -18,11 +19,11 @@ import {
 } from "./sceneKeys";
 
 const COLUMNS = 5;
-const CELL_WIDTH = 150;
-const CELL_HEIGHT = 110;
-const GAP_X = 20;
-const GAP_Y = 24;
-const GRID_TOP = 200;
+const CELL_WIDTH = 75;
+const CELL_HEIGHT = 55;
+const GAP_X = 10;
+const GAP_Y = 12;
+const GRID_TOP = 100;
 
 export class CharacterSelectScene extends Phaser.Scene {
   private mode: CharacterSelectSceneData["mode"] = "single";
@@ -41,9 +42,9 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.cards = new Map();
 
     this.add
-      .text(GAME_WIDTH / 2, 70, `Choose ${MAX_ROSTER} characters`, {
+      .text(GAME_WIDTH / 2, 35, `Choose ${MAX_ROSTER} characters`, {
         fontFamily: GAME_FONT,
-        fontSize: "22px",
+        fontSize: "14px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
@@ -57,14 +58,18 @@ export class CharacterSelectScene extends Phaser.Scene {
       const x = startX + column * (CELL_WIDTH + GAP_X);
       const y = GRID_TOP + row * (CELL_HEIGHT + GAP_Y);
 
-      const card = this.add
-        .rectangle(x, y, CELL_WIDTH, CELL_HEIGHT, GAME_PALETTE.LAVENDER)
-        .setStrokeStyle(2, GAME_PALETTE.BLUSH)
-        .setInteractive({ useHandCursor: true });
+      const card = createPanel(
+        this,
+        x,
+        y,
+        CELL_WIDTH,
+        CELL_HEIGHT,
+        GAME_PALETTE.LAVENDER,
+      ).setInteractive({ useHandCursor: true });
       this.add
         .text(x, y, character.name, {
           fontFamily: GAME_FONT,
-          fontSize: "12px",
+          fontSize: "8px",
           color: TEXT_COLOR,
         })
         .setOrigin(0.5);
@@ -74,25 +79,25 @@ export class CharacterSelectScene extends Phaser.Scene {
     });
 
     this.counter = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 110, "", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 55, "", {
         fontFamily: GAME_FONT,
-        fontSize: "14px",
+        fontSize: "9px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
 
-    createButton(this, GAME_WIDTH / 2 - 160, GAME_HEIGHT - 50, "Back", {
-      width: 200,
+    createButton(this, GAME_WIDTH / 2 - 80, GAME_HEIGHT - 25, "Back", {
+      width: 100,
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });
     this.confirmButton = createButton(
       this,
-      GAME_WIDTH / 2 + 160,
-      GAME_HEIGHT - 50,
+      GAME_WIDTH / 2 + 80,
+      GAME_HEIGHT - 25,
       "Confirm",
       {
-        width: 200,
+        width: 100,
         fill: GAME_PALETTE.ROSE,
         onClick: () => this.confirm(),
       },

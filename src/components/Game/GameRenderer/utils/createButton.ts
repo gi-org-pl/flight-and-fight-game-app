@@ -1,5 +1,11 @@
 import Phaser from "phaser";
-import { GAME_FONT, GAME_PALETTE, TEXT_COLOR } from "../GameRenderer.constants";
+import {
+  BEVEL,
+  GAME_FONT,
+  GAME_PALETTE,
+  TEXT_COLOR,
+} from "../GameRenderer.constants";
+import { darkenColor } from "./darkenColor";
 
 export interface ButtonOptions {
   width?: number;
@@ -9,10 +15,15 @@ export interface ButtonOptions {
   onClick: () => void;
 }
 
-const DEFAULT_WIDTH = 280;
-const DEFAULT_HEIGHT = 56;
+const DEFAULT_WIDTH = 160;
+const DEFAULT_HEIGHT = 30;
+const HOVER_BEVEL = BEVEL + 1;
 
-// Minimal wireframe button: a filled rectangle with a centred label.
+// NES.css-style button: a flat fill with a hard pixel bevel along the
+// bottom/right edge. Hovering thickens the bevel and pressing flips it to the
+// top/left so the button reads as physically depressed — the same feedback as
+// `.nes-btn` (`inset -4px -4px` → `inset -6px -6px` on hover → `inset 4px 4px`
+// while active).
 export const createButton = (
   scene: Phaser.Scene,
   x: number,
@@ -24,23 +35,47 @@ export const createButton = (
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
     fill = GAME_PALETTE.LAVENDER,
-    fontSize = "16px",
+    fontSize = "10px",
     onClick,
   } = options;
 
-  const background = scene.add
-    .rectangle(0, 0, width, height, fill)
-    .setStrokeStyle(2, GAME_PALETTE.BLUSH);
+  const shadow = darkenColor(fill);
+  const background = scene.add.rectangle(0, 0, width, height, fill);
+  const bevelBottom = scene.add.rectangle(0, 0, width, BEVEL, shadow);
+  const bevelRight = scene.add.rectangle(0, 0, BEVEL, height, shadow);
   const text = scene.add
     .text(0, 0, label, { fontFamily: GAME_FONT, fontSize, color: TEXT_COLOR })
     .setOrigin(0.5);
 
-  const container = scene.add.container(x, y, [background, text]);
+  // Lay the two bevel strips along one corner and nudge the label toward the
+  // raised side. `pressed` flips both to the opposite corner.
+  const layoutBevel = (size: number, pressed: boolean): void => {
+    const sign = pressed ? -1 : 1;
+    bevelBottom
+      .setSize(width, size)
+      .setPosition(0, sign * (height - size) * 0.5);
+    bevelRight
+      .setSize(size, height)
+      .setPosition(sign * (width - size) * 0.5, 0);
+    text.setPosition(sign * -BEVEL * 0.5, sign * -BEVEL * 0.5);
+  };
+  layoutBevel(BEVEL, false);
+
+  const container = scene.add.container(x, y, [
+    background,
+    bevelBottom,
+    bevelRight,
+    text,
+  ]);
   container.setSize(width, height);
   container.setInteractive({ useHandCursor: true });
-  container.on("pointerover", () => background.setAlpha(0.8));
-  container.on("pointerout", () => background.setAlpha(1));
-  container.on("pointerup", onClick);
+  container.on("pointerover", () => layoutBevel(HOVER_BEVEL, false));
+  container.on("pointerout", () => layoutBevel(BEVEL, false));
+  container.on("pointerdown", () => layoutBevel(BEVEL, true));
+  container.on("pointerup", () => {
+    layoutBevel(BEVEL, false);
+    onClick();
+  });
 
   return container;
 };

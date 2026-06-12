@@ -23,17 +23,17 @@ export class MatchmakingScene extends Phaser.Scene {
 
   create(data: MatchmakingSceneData): void {
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 40, "Searching for opponent...", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, "Searching for opponent...", {
         fontFamily: GAME_FONT,
-        fontSize: "20px",
+        fontSize: "12px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
 
     const status = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 10, ".", {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 5, ".", {
         fontFamily: GAME_FONT,
-        fontSize: "20px",
+        fontSize: "12px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
@@ -46,7 +46,7 @@ export class MatchmakingScene extends Phaser.Scene {
       },
     });
 
-    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 80, "Cancel", {
+    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 40, "Cancel", {
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });

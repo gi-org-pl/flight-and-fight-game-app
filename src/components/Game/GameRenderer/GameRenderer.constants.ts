@@ -1,13 +1,13 @@
 import { COLORS } from "@/types/common";
 import type { GameCharacter } from "./GameRenderer.types";
+import { toColorNumber } from "./utils/toColorNumber";
 
-export const GAME_WIDTH = 960;
-export const GAME_HEIGHT = 540;
+// Low base resolution rendered with pixelArt + Scale.FIT: the 960x540 host
+// container scales this up 2x, giving chunkier text and crisp pixel doubling.
+export const GAME_WIDTH = 480;
+export const GAME_HEIGHT = 270;
 export const GAME_FONT = "Press Start 2P";
 export const BACKGROUND_COLOR = COLORS.PERIWINKLE;
-
-const toColorNumber = (hex: string): number =>
-  Number.parseInt(hex.slice(1), 16);
 
 export const GAME_PALETTE = {
   BLUSH: toColorNumber(COLORS.BLUSH),
@@ -19,6 +19,12 @@ export const GAME_PALETTE = {
 
 export const TEXT_COLOR = "#ffffff";
 export const TEXT_COLOR_NUMBER = 0xff_ff_ff;
+
+// Thickness of the hard pixel bevel that gives NES.css buttons/containers their
+// chunky, depressed-corner look (mirrors `.nes-btn`'s `inset -4px -4px` shadow).
+// Authored against the 480x270 base; the 2x host upscale renders it ~4px, the
+// same on-screen weight as `.nes-btn`.
+export const BEVEL = 2;
 
 export const MAX_ROSTER = 5;
 

@@ -27,31 +27,31 @@ export class StartScene extends Phaser.Scene {
     this.mode = "single";
 
     this.add
-      .text(GAME_WIDTH / 2, 110, "Flight and Fight", {
+      .text(GAME_WIDTH / 2, 55, "Flight and Fight", {
         fontFamily: GAME_FONT,
-        fontSize: "32px",
+        fontSize: "20px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
 
     this.singleButton = createButton(
       this,
-      GAME_WIDTH / 2 - 150,
-      250,
+      GAME_WIDTH / 2 - 75,
+      125,
       "Single Player",
-      { width: 260, onClick: () => this.selectMode("single") },
+      { width: 140, onClick: () => this.selectMode("single") },
     );
     this.multiButton = createButton(
       this,
-      GAME_WIDTH / 2 + 150,
-      250,
+      GAME_WIDTH / 2 + 75,
+      125,
       "Multiplayer",
-      { width: 260, onClick: () => this.selectMode("multiplayer") },
+      { width: 140, onClick: () => this.selectMode("multiplayer") },
     );
 
-    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 90, "Start", {
+    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 45, "Start", {
       fill: GAME_PALETTE.ROSE,
-      fontSize: "20px",
+      fontSize: "14px",
       onClick: () => this.start(),
     });
 
