@@ -1,5 +1,7 @@
+import GameRenderer from "@/components/Game/GameRenderer/GameRenderer";
+
 const GameContent = () => {
-  return <div className="w-[960px] h-[540px]">//</div>;
+  return <GameRenderer className="w-[960px] h-[540px]" />;
 };
 
 export default GameContent;
