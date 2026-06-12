@@ -1,5 +1,5 @@
-import Phaser from 'phaser';
-import { GAME_FONT, GAME_PALETTE, TEXT_COLOR } from '../GameRenderer.constants';
+import Phaser from "phaser";
+import { GAME_FONT, GAME_PALETTE, TEXT_COLOR } from "../GameRenderer.constants";
 
 export interface ButtonOptions {
   width?: number;
@@ -24,7 +24,7 @@ export const createButton = (
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
     fill = GAME_PALETTE.LAVENDER,
-    fontSize = '16px',
+    fontSize = "16px",
     onClick,
   } = options;
 
@@ -38,9 +38,9 @@ export const createButton = (
   const container = scene.add.container(x, y, [background, text]);
   container.setSize(width, height);
   container.setInteractive({ useHandCursor: true });
-  container.on('pointerover', () => background.setAlpha(0.8));
-  container.on('pointerout', () => background.setAlpha(1));
-  container.on('pointerup', onClick);
+  container.on("pointerover", () => background.setAlpha(0.8));
+  container.on("pointerout", () => background.setAlpha(1));
+  container.on("pointerup", onClick);
 
   return container;
 };

@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 import {
   CHARACTERS,
   GAME_FONT,
@@ -7,15 +7,15 @@ import {
   GAME_WIDTH,
   MAX_ROSTER,
   TEXT_COLOR,
-} from '../GameRenderer.constants';
-import type { CharacterSelectSceneData } from '../GameRenderer.types';
-import { createButton } from '../utils/createButton';
-import { toggleSelection } from '../utils/toggleSelection';
+} from "../GameRenderer.constants";
+import type { CharacterSelectSceneData } from "../GameRenderer.types";
+import { createButton } from "../utils/createButton";
+import { toggleSelection } from "../utils/toggleSelection";
 import {
   CHARACTER_SELECT_SCENE_KEY,
   FIGHT_SCENE_KEY,
   START_SCENE_KEY,
-} from './sceneKeys';
+} from "./sceneKeys";
 
 const COLUMNS = 5;
 const CELL_WIDTH = 150;
@@ -25,7 +25,7 @@ const GAP_Y = 24;
 const GRID_TOP = 200;
 
 export class CharacterSelectScene extends Phaser.Scene {
-  private mode: CharacterSelectSceneData['mode'] = 'single';
+  private mode: CharacterSelectSceneData["mode"] = "single";
   private selected: string[] = [];
   private cards = new Map<string, Phaser.GameObjects.Rectangle>();
   private counter?: Phaser.GameObjects.Text;
@@ -43,7 +43,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.add
       .text(GAME_WIDTH / 2, 70, `Choose ${MAX_ROSTER} characters`, {
         fontFamily: GAME_FONT,
-        fontSize: '22px',
+        fontSize: "22px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
@@ -64,24 +64,24 @@ export class CharacterSelectScene extends Phaser.Scene {
       this.add
         .text(x, y, character.name, {
           fontFamily: GAME_FONT,
-          fontSize: '12px',
+          fontSize: "12px",
           color: TEXT_COLOR,
         })
         .setOrigin(0.5);
 
-      card.on('pointerup', () => this.toggle(character.id));
+      card.on("pointerup", () => this.toggle(character.id));
       this.cards.set(character.id, card);
     });
 
     this.counter = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 110, '', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 110, "", {
         fontFamily: GAME_FONT,
-        fontSize: '14px',
+        fontSize: "14px",
         color: TEXT_COLOR,
       })
       .setOrigin(0.5);
 
-    createButton(this, GAME_WIDTH / 2 - 160, GAME_HEIGHT - 50, 'Back', {
+    createButton(this, GAME_WIDTH / 2 - 160, GAME_HEIGHT - 50, "Back", {
       width: 200,
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
@@ -90,7 +90,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 + 160,
       GAME_HEIGHT - 50,
-      'Confirm',
+      "Confirm",
       {
         width: 200,
         fill: GAME_PALETTE.ROSE,
