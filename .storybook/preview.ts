@@ -1,7 +1,6 @@
-import type { Preview } from "@storybook/react-vite";
+import type { Preview } from '@storybook/react-vite';
 
-import "@gi/athena/athena.css";
-import "../src/index.css";
+import '../src/index.css';
 
 const preview: Preview = {
   parameters: {
@@ -16,7 +15,7 @@ const preview: Preview = {
       // 'todo' - show a11y violations in the test UI only
       // 'error' - fail CI on a11y violations
       // 'off' - skip a11y checks entirely
-      test: "todo",
+      test: 'todo',
     },
   },
 };
