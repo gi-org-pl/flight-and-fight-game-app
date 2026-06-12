@@ -25,7 +25,6 @@ Project's main dependencies are listed below.
 | Axios        | ^1.x    |
 | Zustand      | ^5.x    |
 | Storybook    | ^10.x   |
-| @gi/athena   | latest  |
 
 ### Package descriptions
 
@@ -38,7 +37,6 @@ Project's main dependencies are listed below.
 - **Playwright** - End-to-end testing framework for reliable cross-browser testing
 - **Zustand** - Lightweight state management library for React applications
 - **Storybook** - UI development environment and playground for building, previewing, and testing isolated components interactively
-- **@gi/athena** - Our front-end component package which you can [modify here](https://github.com/Generacja-Innowacja/athena)
 
 ## Infrastructure
 
@@ -155,16 +153,6 @@ Run Storybook with:
 ```bash
 yarn storybook        # Start Storybook development server (http://localhost:6006)
 yarn storybook:build  # Build Storybook for production deployment
-```
-
-## Working with Athena
-
-`@gi/athena` exports all ours reusable components. If you need new reusable component, please update athena package instead of creating a new component in the project. Create new components in the project only if they will be used only in this specific project.
-
-If Athena has been updated, you need to upgrade local packages list to use new changes:
-
-```bash
-yarn upgrade @gi/athena
 ```
 
 ## Resources

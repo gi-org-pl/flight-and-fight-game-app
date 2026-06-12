@@ -1,6 +1,5 @@
 import type { Preview } from "@storybook/react-vite";
 
-import "@gi/athena/athena.css";
 import "../src/index.css";
 
 const preview: Preview = {
