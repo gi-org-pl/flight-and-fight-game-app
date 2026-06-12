@@ -25,6 +25,21 @@ samp {
   --color-orchid: var(--color-orchid);
   --color-lavender: var(--color-lavender);
   --color-periwinkle: var(--color-periwinkle);
+
+  --animate-bg-drift: bg-drift 60s linear infinite;
+  --animate-bg-drift-sh: bg-drift 90s linear infinite;
+
+  /* Shift the repeating background by exactly one tile width (556x156 strip
+     rendered at `auto 100%`, so tile width = 556/156 * element height) for a
+     seamless infinite loop with no empty space and no snap. */
+  @keyframes bg-drift {
+    from {
+      background-position-x: 0;
+    }
+    to {
+      background-position-x: calc((556 / 156) * 100lvh * -1);
+    }
+  }
 }
 
 .nes-container.is-dark {

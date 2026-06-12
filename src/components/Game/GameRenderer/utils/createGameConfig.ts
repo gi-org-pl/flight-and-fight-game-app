@@ -5,6 +5,11 @@ import {
   GAME_WIDTH,
 } from "../GameRenderer.constants";
 import { BootScene } from "../scenes/BootScene";
+import { CharacterSelectScene } from "../scenes/CharacterSelectScene";
+import { FightScene } from "../scenes/FightScene";
+import { MatchmakingScene } from "../scenes/MatchmakingScene";
+import { StartScene } from "../scenes/StartScene";
+import { WinnerScene } from "../scenes/WinnerScene";
 
 export const createGameConfig = (
   parent: HTMLElement,
@@ -19,5 +24,12 @@ export const createGameConfig = (
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene],
+  scene: [
+    BootScene,
+    StartScene,
+    MatchmakingScene,
+    CharacterSelectScene,
+    FightScene,
+    WinnerScene,
+  ],
 });
