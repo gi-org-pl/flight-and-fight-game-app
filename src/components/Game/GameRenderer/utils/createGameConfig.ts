@@ -1,10 +1,10 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 import {
   BACKGROUND_COLOR,
   GAME_HEIGHT,
   GAME_WIDTH,
-} from '../GameRenderer.constants';
-import { BootScene } from '../scenes/BootScene';
+} from "../GameRenderer.constants";
+import { BootScene } from "../scenes/BootScene";
 
 export const createGameConfig = (
   parent: HTMLElement,
