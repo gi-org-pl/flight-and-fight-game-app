@@ -1,4 +1,4 @@
-import { COLORS } from "@/types/common";
+import { COLORS } from "@/constants/common";
 import type { GameCharacter } from "./GameRenderer.types";
 import { toColorNumber } from "./utils/toColorNumber";
 
@@ -6,7 +6,12 @@ import { toColorNumber } from "./utils/toColorNumber";
 // container scales this up 2x, giving chunkier text and crisp pixel doubling.
 export const GAME_WIDTH = 480;
 export const GAME_HEIGHT = 270;
+// The web font (CSS family) we rasterize from, and the cache key for the
+// bitmap font baked from it. Phaser `Text` anti-aliases glyphs, which blur when
+// the low-res buffer is upscaled; `BitmapText` built from this baked atlas
+// samples nearest-neighbor and stays crisp. See utils/generateBitmapFont.ts.
 export const GAME_FONT = "Press Start 2P";
+export const GAME_BITMAP_FONT = "press-start-2p-bitmap";
 export const BACKGROUND_COLOR = COLORS.PERIWINKLE;
 
 export const GAME_PALETTE = {
@@ -27,16 +32,19 @@ export const TEXT_COLOR_NUMBER = 0xff_ff_ff;
 export const BEVEL = 2;
 
 export const MAX_ROSTER = 5;
+// Stats are scored on this scale; the info-panel bars fill relative to it.
+export const MAX_STAT = 10;
 
+// Mocked roster — stats stand in for an API the game is not wired to yet.
 export const CHARACTERS: GameCharacter[] = [
-  { id: "c1", name: "Falcon" },
-  { id: "c2", name: "Viper" },
-  { id: "c3", name: "Comet" },
-  { id: "c4", name: "Raptor" },
-  { id: "c5", name: "Blaze" },
-  { id: "c6", name: "Storm" },
-  { id: "c7", name: "Nova" },
-  { id: "c8", name: "Talon" },
-  { id: "c9", name: "Vortex" },
-  { id: "c10", name: "Phantom" },
+  { id: "c1", name: "Falcon", stats: { power: 7, speed: 8, defense: 5 } },
+  { id: "c2", name: "Viper", stats: { power: 9, speed: 6, defense: 4 } },
+  { id: "c3", name: "Comet", stats: { power: 5, speed: 10, defense: 3 } },
+  { id: "c4", name: "Raptor", stats: { power: 8, speed: 7, defense: 6 } },
+  { id: "c5", name: "Blaze", stats: { power: 10, speed: 5, defense: 5 } },
+  { id: "c6", name: "Storm", stats: { power: 6, speed: 9, defense: 7 } },
+  { id: "c7", name: "Nova", stats: { power: 7, speed: 7, defense: 7 } },
+  { id: "c8", name: "Talon", stats: { power: 8, speed: 6, defense: 8 } },
+  { id: "c9", name: "Vortex", stats: { power: 4, speed: 8, defense: 9 } },
+  { id: "c10", name: "Phantom", stats: { power: 9, speed: 9, defense: 2 } },
 ];

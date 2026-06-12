@@ -1,8 +1,15 @@
 export type GameMode = "single" | "multiplayer";
 
+export interface CharacterStats {
+  power: number;
+  speed: number;
+  defense: number;
+}
+
 export interface GameCharacter {
   id: string;
   name: string;
+  stats: CharacterStats;
 }
 
 export interface MatchmakingSceneData {

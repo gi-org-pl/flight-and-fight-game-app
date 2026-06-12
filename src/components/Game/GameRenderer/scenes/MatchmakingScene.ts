@@ -1,12 +1,11 @@
 import Phaser from "phaser";
 import {
-  GAME_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
-  TEXT_COLOR,
 } from "../GameRenderer.constants";
 import type { MatchmakingSceneData } from "../GameRenderer.types";
+import { createBitmapText } from "../utils/createBitmapText";
 import { createButton } from "../utils/createButton";
 import {
   CHARACTER_SELECT_SCENE_KEY,
@@ -22,21 +21,21 @@ export class MatchmakingScene extends Phaser.Scene {
   }
 
   create(data: MatchmakingSceneData): void {
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 20, "Searching for opponent...", {
-        fontFamily: GAME_FONT,
-        fontSize: "12px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2 - 20,
+      "Searching for opponent...",
+      12,
+    );
 
-    const status = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 5, ".", {
-        fontFamily: GAME_FONT,
-        fontSize: "12px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    const status = createBitmapText(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2 + 5,
+      ".",
+      12,
+    );
 
     this.time.addEvent({
       delay: 400,

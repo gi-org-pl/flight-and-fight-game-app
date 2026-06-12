@@ -1,12 +1,11 @@
 import Phaser from "phaser";
 import {
-  GAME_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
-  TEXT_COLOR,
 } from "../GameRenderer.constants";
 import type { GameMode } from "../GameRenderer.types";
+import { createBitmapText } from "../utils/createBitmapText";
 import { createButton } from "../utils/createButton";
 import {
   CHARACTER_SELECT_SCENE_KEY,
@@ -26,13 +25,7 @@ export class StartScene extends Phaser.Scene {
   create(): void {
     this.mode = "single";
 
-    this.add
-      .text(GAME_WIDTH / 2, 55, "Flight and Fight", {
-        fontFamily: GAME_FONT,
-        fontSize: "20px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(this, GAME_WIDTH / 2, 55, "Flight and Fight", 20);
 
     this.singleButton = createButton(
       this,
@@ -51,7 +44,7 @@ export class StartScene extends Phaser.Scene {
 
     createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 45, "Start", {
       fill: GAME_PALETTE.ROSE,
-      fontSize: "14px",
+      fontSize: 14,
       onClick: () => this.start(),
     });
 

@@ -1,22 +1,19 @@
 import Phaser from "phaser";
-import {
-  BEVEL,
-  GAME_FONT,
-  GAME_PALETTE,
-  TEXT_COLOR,
-} from "../GameRenderer.constants";
+import { BEVEL, GAME_PALETTE } from "../GameRenderer.constants";
+import { createBitmapText } from "./createBitmapText";
 import { darkenColor } from "./darkenColor";
 
 export interface ButtonOptions {
   width?: number;
   height?: number;
   fill?: number;
-  fontSize?: string;
+  fontSize?: number;
   onClick: () => void;
 }
 
 const DEFAULT_WIDTH = 160;
 const DEFAULT_HEIGHT = 30;
+const DEFAULT_FONT_SIZE = 10;
 const HOVER_BEVEL = BEVEL + 1;
 
 // NES.css-style button: a flat fill with a hard pixel bevel along the
@@ -35,7 +32,7 @@ export const createButton = (
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
     fill = GAME_PALETTE.LAVENDER,
-    fontSize = "10px",
+    fontSize = DEFAULT_FONT_SIZE,
     onClick,
   } = options;
 
@@ -43,9 +40,7 @@ export const createButton = (
   const background = scene.add.rectangle(0, 0, width, height, fill);
   const bevelBottom = scene.add.rectangle(0, 0, width, BEVEL, shadow);
   const bevelRight = scene.add.rectangle(0, 0, BEVEL, height, shadow);
-  const text = scene.add
-    .text(0, 0, label, { fontFamily: GAME_FONT, fontSize, color: TEXT_COLOR })
-    .setOrigin(0.5);
+  const text = createBitmapText(scene, 0, 0, label, fontSize);
 
   // Lay the two bevel strips along one corner and nudge the label toward the
   // raised side. `pressed` flips both to the opposite corner.

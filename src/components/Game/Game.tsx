@@ -9,7 +9,7 @@ const Game = () => {
         <div className="nes-container with-title is-dark is-centered">
           <GameRenderer className="w-[960px] h-[540px]" />
         </div>
-        <div className="title text-white">
+        <div className="title text-white z-10">
           Fight or Flight | © Generacja Innowacja
         </div>
       </div>

@@ -1,12 +1,11 @@
 import Phaser from "phaser";
 import {
-  GAME_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
-  TEXT_COLOR,
 } from "../GameRenderer.constants";
 import type { FightSceneData } from "../GameRenderer.types";
+import { createBitmapText } from "../utils/createBitmapText";
 import { createButton } from "../utils/createButton";
 import { createPanel } from "../utils/createPanel";
 import { FIGHT_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
@@ -22,32 +21,20 @@ export class FightScene extends Phaser.Scene {
   create(data: FightSceneData): void {
     const opponentLabel = data.mode === "multiplayer" ? "Opponent" : "Computer";
 
-    this.add
-      .text(GAME_WIDTH / 2, 30, "Fight!", {
-        fontFamily: GAME_FONT,
-        fontSize: "16px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(this, GAME_WIDTH / 2, 30, "Fight!", 16);
 
     this.drawFighter(GAME_WIDTH / 4, "You", GAME_PALETTE.ROSE);
     this.drawFighter((GAME_WIDTH / 4) * 3, opponentLabel, GAME_PALETTE.ORCHID);
 
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, "VS", {
-        fontFamily: GAME_FONT,
-        fontSize: "14px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, "VS", 14);
 
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 65, `Roster: ${data.roster.length}`, {
-        fontFamily: GAME_FONT,
-        fontSize: "8px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 65,
+      `Roster: ${data.roster.length}`,
+      8,
+    );
 
     createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 35, "Finish Fight", {
       fill: GAME_PALETTE.LAVENDER,
@@ -68,12 +55,6 @@ export class FightScene extends Phaser.Scene {
       6,
       GAME_PALETTE.BLUSH,
     );
-    this.add
-      .text(x, y + FIGHTER_HEIGHT / 2 + 12, label, {
-        fontFamily: GAME_FONT,
-        fontSize: "9px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(this, x, y + FIGHTER_HEIGHT / 2 + 12, label, 9);
   }
 }

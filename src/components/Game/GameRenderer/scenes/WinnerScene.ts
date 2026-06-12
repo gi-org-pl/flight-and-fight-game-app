@@ -1,12 +1,11 @@
 import Phaser from "phaser";
 import {
-  GAME_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
-  TEXT_COLOR,
 } from "../GameRenderer.constants";
 import type { WinnerSceneData } from "../GameRenderer.types";
+import { createBitmapText } from "../utils/createBitmapText";
 import { createButton } from "../utils/createButton";
 import { START_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
 
@@ -16,21 +15,9 @@ export class WinnerScene extends Phaser.Scene {
   }
 
   create(data: WinnerSceneData): void {
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 30, "Winner", {
-        fontFamily: GAME_FONT,
-        fontSize: "18px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 30, "Winner", 18);
 
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, data.winner, {
-        fontFamily: GAME_FONT,
-        fontSize: "14px",
-        color: TEXT_COLOR,
-      })
-      .setOrigin(0.5);
+    createBitmapText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, data.winner, 14);
 
     createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 45, "Play Again", {
       fill: GAME_PALETTE.ROSE,
