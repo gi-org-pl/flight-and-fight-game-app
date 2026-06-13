@@ -1,14 +1,14 @@
-export { apiClient, createApiClient } from "@/services/api/client/apiClient";
 export {
   getCharacters,
   getMyCharacters,
 } from "@/services/api/characters";
+export { apiClient, createApiClient } from "@/services/api/client/apiClient";
 export {
   type CharacterResponse,
-  characterResponseSchema,
   type CharacterStatsResponse,
-  characterStatsResponseSchema,
   type CharacterType,
+  characterResponseSchema,
+  characterStatsResponseSchema,
   characterTypeSchema,
   type SelectCharactersRequest,
   selectCharactersRequestSchema,

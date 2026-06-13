@@ -1,10 +1,10 @@
+import { z } from "zod";
 import { apiClient } from "@/services/api/client/apiClient";
 import {
   type CharacterResponse,
   characterResponseSchema,
 } from "@/services/api/schemas/character";
 import { validateResponse } from "@/services/api/utils/validateResponse";
-import { z } from "zod";
 
 const characterListSchema = z.array(characterResponseSchema);
 

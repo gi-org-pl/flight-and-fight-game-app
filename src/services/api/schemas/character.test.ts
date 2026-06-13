@@ -31,14 +31,18 @@ describe("characterTypeSchema", () => {
 describe("characterStatsResponseSchema", () => {
   describe("when given valid stats", () => {
     it("parses successfully", () => {
-      expect(characterStatsResponseSchema.parse(validStats)).toEqual(validStats);
+      expect(characterStatsResponseSchema.parse(validStats)).toEqual(
+        validStats,
+      );
     });
   });
 
   describe("when a stat is missing", () => {
     it("fails validation", () => {
       const { health: _health, ...noHealth } = validStats;
-      expect(characterStatsResponseSchema.safeParse(noHealth).success).toBe(false);
+      expect(characterStatsResponseSchema.safeParse(noHealth).success).toBe(
+        false,
+      );
     });
   });
 });
@@ -54,7 +58,10 @@ describe("characterResponseSchema", () => {
   describe("when type is invalid", () => {
     it("fails validation", () => {
       expect(
-        characterResponseSchema.safeParse({ type: "INVALID", stats: validStats }).success,
+        characterResponseSchema.safeParse({
+          type: "INVALID",
+          stats: validStats,
+        }).success,
       ).toBe(false);
     });
   });
@@ -71,7 +78,9 @@ describe("selectCharactersRequestSchema", () => {
   describe("when an element is an invalid character type", () => {
     it("fails validation", () => {
       expect(
-        selectCharactersRequestSchema.safeParse({ characters: ["IRIS", "NOPE"] }).success,
+        selectCharactersRequestSchema.safeParse({
+          characters: ["IRIS", "NOPE"],
+        }).success,
       ).toBe(false);
     });
   });

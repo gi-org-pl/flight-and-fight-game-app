@@ -121,7 +121,13 @@ export class FightScene extends Phaser.Scene {
     this.resetState(data);
 
     const overlay = this.add
-      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, GAME_PALETTE.PERIWINKLE)
+      .rectangle(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2,
+        GAME_WIDTH,
+        GAME_HEIGHT,
+        GAME_PALETTE.PERIWINKLE,
+      )
       .setAlpha(1);
 
     this.tweens.add({

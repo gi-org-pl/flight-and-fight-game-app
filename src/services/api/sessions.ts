@@ -1,7 +1,5 @@
 import { apiClient } from "@/services/api/client/apiClient";
-import {
-  type CharacterType,
-} from "@/services/api/schemas/character";
+import { type CharacterType } from "@/services/api/schemas/character";
 import {
   type GetSessionResponse,
   getSessionResponseSchema,
@@ -24,7 +22,9 @@ export const joinSession = async (
   code: string,
   characters: CharacterType[],
 ): Promise<SessionCredentialsResponse> => {
-  const { data } = await apiClient.post<unknown>(`/sessions/${code}/join`, { characters });
+  const { data } = await apiClient.post<unknown>(`/sessions/${code}/join`, {
+    characters,
+  });
 
   return validateResponse(sessionCredentialsResponseSchema, data);
 };

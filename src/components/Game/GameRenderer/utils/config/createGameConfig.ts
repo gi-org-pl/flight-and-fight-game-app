@@ -1,15 +1,15 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 import {
   BACKGROUND_COLOR,
   GAME_HEIGHT,
   GAME_WIDTH,
-} from '../../GameRenderer.constants';
-import { BootScene } from '../../scenes/BootScene';
-import { CharacterSelectScene } from '../../scenes/CharacterSelectScene';
-import { ConnectScene } from '../../scenes/ConnectScene';
-import { FightScene } from '../../scenes/FightScene';
-import { StartScene } from '../../scenes/StartScene';
-import { WinnerScene } from '../../scenes/WinnerScene';
+} from "../../GameRenderer.constants";
+import { BootScene } from "../../scenes/BootScene";
+import { CharacterSelectScene } from "../../scenes/CharacterSelectScene";
+import { ConnectScene } from "../../scenes/ConnectScene";
+import { FightScene } from "../../scenes/FightScene";
+import { StartScene } from "../../scenes/StartScene";
+import { WinnerScene } from "../../scenes/WinnerScene";
 
 export const createGameConfig = (
   parent: HTMLElement,

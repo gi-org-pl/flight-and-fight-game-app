@@ -1,6 +1,6 @@
+import { useState } from "react";
 import { QTE_DEFINITIONS } from "@/constants/qte";
 import type { QteDefinition } from "@/types/qte";
-import { useState } from "react";
 import QteOverlay from "../qte/QteOverlay/QteOverlay";
 import GameBackground from "./GameBackground/GameBackground";
 import GameRenderer from "./GameRenderer/GameRenderer";

@@ -33,22 +33,18 @@ export class StartScene extends Phaser.Scene {
         height: 40,
         fill: GAME_PALETTE.ROSE,
         fontSize: 12,
-        onClick: () => this.scene.start(CHARACTER_SELECT_SCENE_KEY, { mode: "single" }),
+        onClick: () =>
+          this.scene.start(CHARACTER_SELECT_SCENE_KEY, { mode: "single" }),
       },
     );
 
-    createButton(
-      this,
-      GAME_WIDTH / 2 + 115,
-      GAME_HEIGHT - 45,
-      "Multiplayer",
-      {
-        width: 200,
-        height: 40,
-        fill: GAME_PALETTE.ROSE,
-        fontSize: 12,
-        onClick: () => this.scene.start(CONNECT_SCENE_KEY, { mode: "multiplayer" }),
-      },
-    );
+    createButton(this, GAME_WIDTH / 2 + 115, GAME_HEIGHT - 45, "Multiplayer", {
+      width: 200,
+      height: 40,
+      fill: GAME_PALETTE.ROSE,
+      fontSize: 12,
+      onClick: () =>
+        this.scene.start(CONNECT_SCENE_KEY, { mode: "multiplayer" }),
+    });
   }
 }

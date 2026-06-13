@@ -51,7 +51,9 @@ describe("joinSession", () => {
 
       const result = await joinSession("RRFFQ69G", [...characters]);
 
-      expect(postSpy).toHaveBeenCalledWith("/sessions/RRFFQ69G/join", { characters });
+      expect(postSpy).toHaveBeenCalledWith("/sessions/RRFFQ69G/join", {
+        characters,
+      });
       expect(result).toEqual(credentials);
     });
   });

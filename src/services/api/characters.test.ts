@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiClient } from "@/services/api/client/apiClient";
 import { getCharacters, getMyCharacters } from "@/services/api/characters";
+import { apiClient } from "@/services/api/client/apiClient";
 
 const character = {
   type: "VEGA",
@@ -27,9 +27,13 @@ describe("getCharacters", () => {
 
   describe("when the API returns an invalid shape", () => {
     it("throws a validation error", async () => {
-      vi.spyOn(apiClient, "get").mockResolvedValue({ data: [{ type: "UNKNOWN" }] });
+      vi.spyOn(apiClient, "get").mockResolvedValue({
+        data: [{ type: "UNKNOWN" }],
+      });
 
-      await expect(getCharacters()).rejects.toThrow("API response validation failed");
+      await expect(getCharacters()).rejects.toThrow(
+        "API response validation failed",
+      );
     });
   });
 });
