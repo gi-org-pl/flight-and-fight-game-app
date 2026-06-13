@@ -272,7 +272,7 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 2,
     params: {
       sequence: ["↑", "→", "↓"],
-      memorizeMs: 2500,
+      memorizeMs: 5000,
       inputDurationMs: 6000,
     },
   },
@@ -284,7 +284,7 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 3,
     params: {
       sequence: ["←", "↑", "→", "↓"],
-      memorizeMs: 2000,
+      memorizeMs: 4500,
       inputDurationMs: 5000,
     },
   },
@@ -296,7 +296,7 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 4,
     params: {
       sequence: ["↓", "→", "↑", "←", "↓"],
-      memorizeMs: 1500,
+      memorizeMs: 4000,
       inputDurationMs: 4000,
     },
   },
@@ -308,7 +308,7 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 5,
     params: {
       sequence: ["↑", "←", "↓", "→", "↑", "←"],
-      memorizeMs: 1000,
+      memorizeMs: 3500,
       inputDurationMs: 3500,
     },
   },

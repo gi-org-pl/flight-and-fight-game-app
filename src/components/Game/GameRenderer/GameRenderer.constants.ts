@@ -1,5 +1,4 @@
 import { COLORS } from "@/constants/common";
-import type { GameCharacter } from "./GameRenderer.types";
 import { toColorNumber } from "./utils/color/toColorNumber";
 
 // Low base resolution rendered with pixelArt + Scale.FIT: the 960x540 host
@@ -40,55 +39,3 @@ export const MAX_ROSTER = 5;
 // Stats are scored on this scale; the info-panel bars fill relative to it.
 export const MAX_STAT = 10;
 
-export const CHARACTERS: GameCharacter[] = [
-  {
-    id: "IRIS",
-    name: "Iris",
-    stats: { power: 6, intelligence: 9, defense: 6, health: 7, refresh: 8 },
-  },
-  {
-    id: "ZEPHYR",
-    name: "Zephyr",
-    stats: { power: 7, intelligence: 7, defense: 5, health: 6, refresh: 9 },
-  },
-  {
-    id: "WENDY",
-    name: "Wendy",
-    stats: { power: 5, intelligence: 8, defense: 8, health: 8, refresh: 6 },
-  },
-  {
-    id: "SKYE",
-    name: "Skye",
-    stats: { power: 8, intelligence: 6, defense: 4, health: 5, refresh: 7 },
-  },
-  {
-    id: "SUNNY",
-    name: "Sunny",
-    stats: { power: 6, intelligence: 7, defense: 7, health: 9, refresh: 7 },
-  },
-  {
-    id: "AURA",
-    name: "Aura",
-    stats: { power: 7, intelligence: 8, defense: 6, health: 7, refresh: 6 },
-  },
-  {
-    id: "NEIL",
-    name: "Neil",
-    stats: { power: 9, intelligence: 5, defense: 5, health: 6, refresh: 5 },
-  },
-  {
-    id: "GALE",
-    name: "Gale",
-    stats: { power: 8, intelligence: 6, defense: 7, health: 7, refresh: 6 },
-  },
-  {
-    id: "THORA",
-    name: "Thora",
-    stats: { power: 9, intelligence: 4, defense: 9, health: 9, refresh: 3 },
-  },
-  {
-    id: "VEGA",
-    name: "Vega",
-    stats: { power: 10, intelligence: 8, defense: 9, health: 10, refresh: 5 },
-  },
-];

@@ -18,6 +18,7 @@ export interface GameService {
   disconnect: () => void;
   attack: () => void;
   defend: () => void;
+  selectCharacters: (characterIds: string[]) => void;
   onSession: (handler: (session: Session) => void) => () => void;
   onAttacked: (handler: (payload: AttackedPayload) => void) => () => void;
   onCharactersUpdated: (
@@ -47,6 +48,7 @@ export const createGameService = (
     disconnect: () => socket.disconnect(),
     attack: () => socket.emit("attack"),
     defend: () => socket.emit("defend"),
+    selectCharacters: (characterIds) => socket.emit("selectCharacters", characterIds),
 
     onSession: (handler) => {
       const wrapped = (raw: unknown) => handler(sessionSchema.parse(raw));

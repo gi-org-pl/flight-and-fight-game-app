@@ -3,7 +3,6 @@ import {
   characterResponseSchema,
   characterStatsResponseSchema,
   characterTypeSchema,
-  selectCharactersRequestSchema,
 } from "@/services/api/schemas/character";
 
 const validStats = {
@@ -11,7 +10,6 @@ const validStats = {
   defense: 9,
   power: 10,
   health: 10,
-  refresh: 5,
 };
 
 describe("characterTypeSchema", () => {
@@ -50,7 +48,7 @@ describe("characterStatsResponseSchema", () => {
 describe("characterResponseSchema", () => {
   describe("when given a valid character", () => {
     it("parses successfully", () => {
-      const payload = { type: "IRIS", stats: validStats };
+      const payload = { type: "IRIS", superpower: "GRASS", stats: validStats };
       expect(characterResponseSchema.parse(payload)).toEqual(payload);
     });
   });
@@ -60,26 +58,20 @@ describe("characterResponseSchema", () => {
       expect(
         characterResponseSchema.safeParse({
           type: "INVALID",
+          superpower: "GRASS",
           stats: validStats,
         }).success,
       ).toBe(false);
     });
   });
-});
 
-describe("selectCharactersRequestSchema", () => {
-  describe("when given a valid characters array", () => {
-    it("parses successfully", () => {
-      const payload = { characters: ["IRIS", "SKYE"] };
-      expect(selectCharactersRequestSchema.parse(payload)).toEqual(payload);
-    });
-  });
-
-  describe("when an element is an invalid character type", () => {
+  describe("when superpower is invalid", () => {
     it("fails validation", () => {
       expect(
-        selectCharactersRequestSchema.safeParse({
-          characters: ["IRIS", "NOPE"],
+        characterResponseSchema.safeParse({
+          type: "IRIS",
+          superpower: "UNKNOWN",
+          stats: validStats,
         }).success,
       ).toBe(false);
     });

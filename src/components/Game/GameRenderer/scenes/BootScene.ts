@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import homeBg from "@/assets/images/home/main-bg.png?url";
-import { CHARACTERS, GAME_FONT, HOME_BG_KEY } from "../GameRenderer.constants";
+import { getCharacters } from "@/services/api/characters";
+import { GAME_FONT, HOME_BG_KEY } from "../GameRenderer.constants";
+import type { GameCharacter } from "../GameRenderer.types";
 import { generateAvatarTextures } from "../utils/avatar/generateAvatar";
 import { readJoinId } from "../utils/connect/readJoinId";
 import { generateBitmapFont } from "../utils/text/generateBitmapFont";
@@ -9,6 +11,9 @@ import {
   CONNECT_SCENE_KEY,
   START_SCENE_KEY,
 } from "./sceneKeys";
+
+const toDisplayName = (type: string): string =>
+  type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -37,7 +42,15 @@ export class BootScene extends Phaser.Scene {
     }
 
     generateBitmapFont(this);
-    generateAvatarTextures(this, CHARACTERS);
+
+    const apiCharacters = await getCharacters();
+    const characters: GameCharacter[] = apiCharacters.map((c) => ({
+      id: c.type,
+      name: c.name ?? toDisplayName(c.type),
+      stats: c.stats,
+    }));
+
+    generateAvatarTextures(this, characters);
 
     // A `?join_id=` deep link (e.g. a scanned share QR) skips the menu and drops
     // straight into the connect scene to auto-join that session.
@@ -45,11 +58,12 @@ export class BootScene extends Phaser.Scene {
     if (joinId) {
       this.scene.start(CONNECT_SCENE_KEY, {
         mode: "multiplayer",
+        characters,
         autoJoinId: joinId,
       });
       return;
     }
 
-    this.scene.start(START_SCENE_KEY);
+    this.scene.start(START_SCENE_KEY, { characters });
   }
 }

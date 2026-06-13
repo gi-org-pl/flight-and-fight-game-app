@@ -1,6 +1,5 @@
 import Phaser from "phaser";
 import {
-  CHARACTERS,
   GAME_BITMAP_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
@@ -20,7 +19,6 @@ import { createEnemyRoster } from "../utils/combat/createEnemyRoster";
 import { createFighter } from "../utils/combat/createFighter";
 import { isAlive, isTeamDefeated } from "../utils/combat/nextAliveIndex";
 import { wedgePositions } from "../utils/layout/wedgePositions";
-import { fadeToScene } from "../utils/scene/fadeToScene";
 import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
 import { FIGHT_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
@@ -119,6 +117,7 @@ export class FightScene extends Phaser.Scene {
   }
 
   create(data: FightSceneData): void {
+    this.cameras.main.fadeIn(350, 174, 158, 225);
     this.resetState(data);
 
     const overlay = this.add
@@ -181,14 +180,14 @@ export class FightScene extends Phaser.Scene {
     this.opponentLabel = data.mode === "multiplayer" ? "Opponent" : "Computer";
 
     const byId = new Map(
-      CHARACTERS.map((character) => [character.id, character]),
+      data.characters.map((character) => [character.id, character]),
     );
     const playerCharacters = data.roster
       .map((id) => byId.get(id))
       .filter((character): character is GameCharacter => Boolean(character));
 
     this.playerTeam = playerCharacters.map(createFighter);
-    this.enemyTeam = createEnemyRoster(CHARACTERS, data.roster, MAX_ROSTER).map(
+    this.enemyTeam = createEnemyRoster(data.characters, data.roster, MAX_ROSTER).map(
       createFighter,
     );
 
@@ -315,7 +314,7 @@ export class FightScene extends Phaser.Scene {
       width: 96,
       fill: GAME_PALETTE.ORCHID,
       onClick: () =>
-        fadeToScene(this, WINNER_SCENE_KEY, { winner: this.opponentLabel }),
+        this.scene.start(WINNER_SCENE_KEY, { winner: this.opponentLabel }),
     });
     this.attackButton = createButton(
       this,
@@ -438,7 +437,7 @@ export class FightScene extends Phaser.Scene {
     this.refresh();
     this.time.delayedCall(ENEMY_TURN_DELAY_MS * 2, () => {
       if (this.sys.isActive()) {
-        fadeToScene(this, WINNER_SCENE_KEY, { winner });
+        this.scene.start(WINNER_SCENE_KEY, { winner });
       }
     });
     return true;

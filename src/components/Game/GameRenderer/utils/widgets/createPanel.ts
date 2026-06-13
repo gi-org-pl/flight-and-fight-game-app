@@ -7,10 +7,15 @@ export interface PanelOptions {
   bevel?: number;
 }
 
+export interface Panel {
+  base: Phaser.GameObjects.Rectangle;
+  parts: Phaser.GameObjects.Rectangle[];
+}
+
 // NES.css-style panel: a flat fill carrying the same hard bottom/right bevel as
 // the buttons, so character cards and fighter frames read like `.nes-container`
-// surfaces instead of thin outlined boxes. Returns the fill rectangle so callers
-// can keep recolouring it (e.g. selection state) and wire up interaction.
+// surfaces instead of thin outlined boxes. Returns base (for interaction/recolor)
+// and all parts (for alpha tweens that must include the bevel strips).
 export const createPanel = (
   scene: Phaser.Scene,
   x: number,
@@ -19,13 +24,12 @@ export const createPanel = (
   height: number,
   fill: number,
   options: PanelOptions = {},
-): Phaser.GameObjects.Rectangle => {
+): Panel => {
   const { shadow = darkenColor(fill), bevel = BEVEL } = options;
 
   const base = scene.add.rectangle(x, y, width, height, fill);
-  // Inset bevel along the bottom and right edges, drawn over the fill.
-  scene.add.rectangle(x, y + (height - bevel) * 0.5, width, bevel, shadow);
-  scene.add.rectangle(x + (width - bevel) * 0.5, y, bevel, height, shadow);
+  const bevelBottom = scene.add.rectangle(x, y + (height - bevel) * 0.5, width, bevel, shadow);
+  const bevelRight = scene.add.rectangle(x + (width - bevel) * 0.5, y, bevel, height, shadow);
 
-  return base;
+  return { base, parts: [base, bevelBottom, bevelRight] };
 };

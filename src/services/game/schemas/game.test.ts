@@ -9,7 +9,7 @@ import {
 
 const validSession = {
   id: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-  state: "OPEN" as const,
+  state: "WAITING_FOR_SECOND_PLAYER" as const,
   firstPlayerId: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
   secondPlayerId: null,
   currentlyAttackingPlayerId: null,

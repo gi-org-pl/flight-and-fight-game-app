@@ -1,10 +1,15 @@
 import { z } from "zod";
 
 /**
- * Session lifecycle state — `OPEN` while waiting for the second player,
- * `CLOSED` once both have joined.
+ * Session lifecycle state — `WAITING_FOR_SECOND_PLAYER` until an opponent joins,
+ * `WAITING_FOR_CHARACTER_CHOICE` until both players pick their characters,
+ * `READY` once the game can start.
  */
-export const sessionStateSchema = z.enum(["OPEN", "CLOSED"]);
+export const sessionStateSchema = z.enum([
+  "WAITING_FOR_SECOND_PLAYER",
+  "WAITING_FOR_CHARACTER_CHOICE",
+  "READY",
+]);
 
 export type SessionState = z.infer<typeof sessionStateSchema>;
 

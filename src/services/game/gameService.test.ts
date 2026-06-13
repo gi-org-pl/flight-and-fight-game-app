@@ -23,7 +23,7 @@ const makeMockSocket = (): GameSocket => {
 
 const validSession = {
   id: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-  state: "OPEN" as const,
+  state: "WAITING_FOR_SECOND_PLAYER" as const,
   firstPlayerId: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
   secondPlayerId: null,
   currentlyAttackingPlayerId: null,
@@ -72,6 +72,14 @@ describe("createGameService", () => {
       const service = createGameService("p1", "s1");
       service.defend();
       expect(mockSocket.emit).toHaveBeenCalledWith("defend");
+    });
+  });
+
+  describe("selectCharacters", () => {
+    it("emits the selectCharacters event with the given ids", () => {
+      const service = createGameService("p1", "s1");
+      service.selectCharacters(["c1", "c2"]);
+      expect(mockSocket.emit).toHaveBeenCalledWith("selectCharacters", ["c1", "c2"]);
     });
   });
 

@@ -1,5 +1,4 @@
 import { apiClient } from "@/services/api/client/apiClient";
-import { type CharacterType } from "@/services/api/schemas/character";
 import {
   type GetSessionResponse,
   getSessionResponseSchema,
@@ -9,10 +8,8 @@ import {
 import { validateResponse } from "@/services/api/utils/validateResponse";
 
 /** `POST /sessions` — creates a new session as the first player. */
-export const createSession = async (
-  characters: CharacterType[],
-): Promise<SessionCredentialsResponse> => {
-  const { data } = await apiClient.post<unknown>("/sessions", { characters });
+export const createSession = async (): Promise<SessionCredentialsResponse> => {
+  const { data } = await apiClient.post<unknown>("/sessions");
 
   return validateResponse(sessionCredentialsResponseSchema, data);
 };
@@ -20,11 +17,8 @@ export const createSession = async (
 /** `POST /sessions/{code}/join` — joins an open session as the second player using the last 8 characters of its id. */
 export const joinSession = async (
   code: string,
-  characters: CharacterType[],
 ): Promise<SessionCredentialsResponse> => {
-  const { data } = await apiClient.post<unknown>(`/sessions/${code}/join`, {
-    characters,
-  });
+  const { data } = await apiClient.post<unknown>(`/sessions/${code}/join`);
 
   return validateResponse(sessionCredentialsResponseSchema, data);
 };

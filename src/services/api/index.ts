@@ -10,8 +10,8 @@ export {
   characterResponseSchema,
   characterStatsResponseSchema,
   characterTypeSchema,
-  type SelectCharactersRequest,
-  selectCharactersRequestSchema,
+  type Superpower,
+  superpowerSchema,
 } from "@/services/api/schemas/character";
 export {
   type ApiErrorResponse,

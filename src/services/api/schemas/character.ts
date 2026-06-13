@@ -15,12 +15,25 @@ export const characterTypeSchema = z.enum([
 
 export type CharacterType = z.infer<typeof characterTypeSchema>;
 
+export const superpowerSchema = z.enum([
+  "LIGHT",
+  "DARK",
+  "WATER",
+  "GRASS",
+  "FIRE",
+  "ELECTRIC",
+  "GROUND",
+  "AIR",
+  "ICE",
+]);
+
+export type Superpower = z.infer<typeof superpowerSchema>;
+
 export const characterStatsResponseSchema = z.object({
   intelligence: z.number(),
   defense: z.number(),
   power: z.number(),
   health: z.number(),
-  refresh: z.number(),
 });
 
 export type CharacterStatsResponse = z.infer<
@@ -29,15 +42,8 @@ export type CharacterStatsResponse = z.infer<
 
 export const characterResponseSchema = z.object({
   type: characterTypeSchema,
+  superpower: superpowerSchema,
   stats: characterStatsResponseSchema,
 });
 
 export type CharacterResponse = z.infer<typeof characterResponseSchema>;
-
-export const selectCharactersRequestSchema = z.object({
-  characters: z.array(characterTypeSchema),
-});
-
-export type SelectCharactersRequest = z.infer<
-  typeof selectCharactersRequestSchema
->;
