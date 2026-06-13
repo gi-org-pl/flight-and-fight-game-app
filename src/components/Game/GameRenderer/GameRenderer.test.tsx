@@ -15,7 +15,7 @@ vi.mock("phaser", () => ({
   },
 }));
 
-vi.mock("./utils/createGameConfig", () => ({
+vi.mock("./utils/config/createGameConfig", () => ({
   createGameConfig: (parent: HTMLElement) => ({ parent }),
 }));
 

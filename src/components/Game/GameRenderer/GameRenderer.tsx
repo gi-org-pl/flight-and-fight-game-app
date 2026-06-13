@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
-import { createGameConfig } from "./utils/createGameConfig";
+import { createGameConfig } from "./utils/config/createGameConfig";
 
 interface Props {
   className?: string;
