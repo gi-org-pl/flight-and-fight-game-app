@@ -5,8 +5,8 @@ import {
   GAME_WIDTH,
   HOME_BG_KEY,
 } from "../GameRenderer.constants";
-import { createBitmapText } from "../utils/text/createBitmapText";
 import { fadeToScene } from "../utils/scene/fadeToScene";
+import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
 import {
   CHARACTER_SELECT_SCENE_KEY,

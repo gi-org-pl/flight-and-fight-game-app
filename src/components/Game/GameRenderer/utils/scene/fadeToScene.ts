@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import type Phaser from "phaser";
 
 export const fadeToScene = (
   scene: Phaser.Scene,
@@ -7,7 +7,7 @@ export const fadeToScene = (
   duration = 400,
 ): void => {
   scene.cameras.main.fadeOut(duration, 0, 0, 0);
-  scene.cameras.main.once('camerafadeoutcomplete', () => {
+  scene.cameras.main.once("camerafadeoutcomplete", () => {
     scene.scene.start(key, data);
   });
 };
