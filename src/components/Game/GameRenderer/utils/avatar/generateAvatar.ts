@@ -11,7 +11,10 @@ const TEXTURE_PX = AVATAR_GRID * CELL_PX;
 /** Stable texture cache key for a character's placeholder avatar. */
 export const avatarTextureKey = (id: string): string => `avatar-${id}`;
 
-const bakeAvatar = (scene: Phaser.Scene, character: CharacterResponse): void => {
+const bakeAvatar = (
+  scene: Phaser.Scene,
+  character: CharacterResponse,
+): void => {
   const key = avatarTextureKey(character.type);
   if (scene.textures.exists(key)) {
     return;

@@ -1,5 +1,8 @@
 import Phaser from "phaser";
-import type { CharacterResponse, CharacterType } from "@/services/api/schemas/character";
+import type {
+  CharacterResponse,
+  CharacterType,
+} from "@/services/api/schemas/character";
 import {
   GAME_BITMAP_FONT,
   GAME_HEIGHT,
@@ -7,11 +10,7 @@ import {
   GAME_WIDTH,
   MAX_ROSTER,
 } from "../GameRenderer.constants";
-import type {
-  Fighter,
-  FightSceneData,
-  FightSide,
-} from "../GameRenderer.types";
+import type { Fighter, FightSceneData, FightSide } from "../GameRenderer.types";
 import { avatarTextureKey } from "../utils/avatar/generateAvatar";
 import { chooseEnemyTarget } from "../utils/combat/chooseEnemyTarget";
 import { computeDamage } from "../utils/combat/computeDamage";
@@ -184,7 +183,9 @@ export class FightScene extends Phaser.Scene {
     );
     const playerCharacters = data.roster
       .map((id) => byId.get(id as CharacterType))
-      .filter((character): character is CharacterResponse => Boolean(character));
+      .filter((character): character is CharacterResponse =>
+        Boolean(character),
+      );
 
     this.playerTeam = playerCharacters.map(createFighter);
     this.enemyTeam = createEnemyRoster(

@@ -80,12 +80,13 @@ const GRID_BLOCK_HEIGHT = 2 * CELL_HEIGHT + GRID_GAP_Y;
 const GRID_TOP =
   INFO_TOP + (INFO_HEIGHT - GRID_BLOCK_HEIGHT) / 2 + CELL_HEIGHT / 2;
 
-const STAT_LABELS: { key: keyof CharacterResponse["stats"]; label: string }[] = [
-  { key: "health", label: "HP" },
-  { key: "power", label: "PWR" },
-  { key: "intelligence", label: "INT" },
-  { key: "defense", label: "DEF" },
-];
+const STAT_LABELS: { key: keyof CharacterResponse["stats"]; label: string }[] =
+  [
+    { key: "health", label: "HP" },
+    { key: "power", label: "PWR" },
+    { key: "intelligence", label: "INT" },
+    { key: "defense", label: "DEF" },
+  ];
 
 interface CardView {
   background: Phaser.GameObjects.Rectangle;

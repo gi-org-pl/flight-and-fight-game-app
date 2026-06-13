@@ -15,7 +15,10 @@ describe("createEnemyRoster", () => {
     it("picks only characters the player did not take", () => {
       const roster = createEnemyRoster(pool, ["IRIS"], 2);
 
-      expect(roster.map((character) => character.type)).toEqual(["ZEPHYR", "WENDY"]);
+      expect(roster.map((character) => character.type)).toEqual([
+        "ZEPHYR",
+        "WENDY",
+      ]);
     });
   });
 
@@ -23,7 +26,10 @@ describe("createEnemyRoster", () => {
     it("falls back to reusing characters the player took", () => {
       const roster = createEnemyRoster(pool, ["IRIS", "ZEPHYR", "WENDY"], 2);
 
-      expect(roster.map((character) => character.type)).toEqual(["SKYE", "IRIS"]);
+      expect(roster.map((character) => character.type)).toEqual([
+        "SKYE",
+        "IRIS",
+      ]);
     });
   });
 
