@@ -9,7 +9,7 @@ const fighter = (
 ): Fighter => ({
   id: "x",
   name: "X",
-  stats: { power, intelligence, defense, health: 5, refresh: 5 },
+  stats: { power, intelligence, defense, health: 5 },
   maxHealth: 100,
   health: 100,
 });

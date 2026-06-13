@@ -2,7 +2,6 @@ import Phaser from "phaser";
 import homeBg from "@/assets/images/home/main-bg.png?url";
 import { getCharacters } from "@/services/api/characters";
 import { GAME_FONT, HOME_BG_KEY } from "../GameRenderer.constants";
-import type { GameCharacter } from "../GameRenderer.types";
 import { generateAvatarTextures } from "../utils/avatar/generateAvatar";
 import { readJoinId } from "../utils/connect/readJoinId";
 import { generateBitmapFont } from "../utils/text/generateBitmapFont";
@@ -11,9 +10,6 @@ import {
   CONNECT_SCENE_KEY,
   START_SCENE_KEY,
 } from "./sceneKeys";
-
-const toDisplayName = (type: string): string =>
-  type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -43,12 +39,7 @@ export class BootScene extends Phaser.Scene {
 
     generateBitmapFont(this);
 
-    const apiCharacters = await getCharacters();
-    const characters: GameCharacter[] = apiCharacters.map((c) => ({
-      id: c.type,
-      name: c.name ?? toDisplayName(c.type),
-      stats: c.stats,
-    }));
+    const characters = await getCharacters();
 
     generateAvatarTextures(this, characters);
 

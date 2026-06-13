@@ -68,7 +68,6 @@ describe("characterSchema", () => {
           defense: 3,
           power: 7,
           health: 100,
-          refresh: 10,
         },
       };
       expect(characterSchema.parse(character)).toMatchObject(character);
@@ -85,7 +84,6 @@ describe("characterSchema", () => {
             defense: 3,
             power: 7,
             health: 100,
-            refresh: 10,
           },
         }),
       ).toThrow();

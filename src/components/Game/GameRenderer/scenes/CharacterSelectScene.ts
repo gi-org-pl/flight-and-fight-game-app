@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import type { CharacterResponse } from "@/services/api/schemas/character";
 import {
   GAME_HEIGHT,
   GAME_PALETTE,
@@ -8,10 +9,10 @@ import {
 } from "../GameRenderer.constants";
 import type {
   CharacterSelectSceneData,
-  GameCharacter,
   SessionInfo,
 } from "../GameRenderer.types";
 import { avatarTextureKey } from "../utils/avatar/generateAvatar";
+import { toDisplayName } from "../utils/character/toDisplayName";
 import { darkenColor } from "../utils/color/darkenColor";
 import { toggleSelection } from "../utils/selection/toggleSelection";
 import { createBitmapText } from "../utils/text/createBitmapText";
@@ -79,7 +80,7 @@ const GRID_BLOCK_HEIGHT = 2 * CELL_HEIGHT + GRID_GAP_Y;
 const GRID_TOP =
   INFO_TOP + (INFO_HEIGHT - GRID_BLOCK_HEIGHT) / 2 + CELL_HEIGHT / 2;
 
-const STAT_LABELS: { key: keyof GameCharacter["stats"]; label: string }[] = [
+const STAT_LABELS: { key: keyof CharacterResponse["stats"]; label: string }[] = [
   { key: "health", label: "HP" },
   { key: "power", label: "PWR" },
   { key: "intelligence", label: "INT" },
@@ -106,7 +107,7 @@ interface InfoView {
 
 export class CharacterSelectScene extends Phaser.Scene {
   private mode: CharacterSelectSceneData["mode"] = "single";
-  private characters: GameCharacter[] = [];
+  private characters: CharacterResponse[] = [];
   private session?: SessionInfo;
   private selected: string[] = [];
   private selectionLocked = false;
@@ -198,13 +199,13 @@ export class CharacterSelectScene extends Phaser.Scene {
 
       // Generated placeholder avatar standing in for real character art.
       const avatar = this.add
-        .image(x, y + AVATAR_OFFSET_Y, avatarTextureKey(character.id))
+        .image(x, y + AVATAR_OFFSET_Y, avatarTextureKey(character.type))
         .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE);
       const nameLabel = createBitmapText(
         this,
         x,
         y + NAME_OFFSET_Y,
-        character.name,
+        toDisplayName(character.type),
         FONT_BODY,
       );
 
@@ -232,7 +233,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       background.on("pointerover", () => this.updateInfo(character));
       background.on("pointerup", () => this.toggle(character));
 
-      this.cards.set(character.id, { background, avatar, badge, order });
+      this.cards.set(character.type, { background, avatar, badge, order });
 
       // Stagger entrance: each row arrives 90ms after the previous, columns
       // within a row fan in 20ms apart. Alpha-only (no y-offset) keeps the
@@ -356,13 +357,13 @@ export class CharacterSelectScene extends Phaser.Scene {
     });
   }
 
-  private toggle(character: GameCharacter): void {
+  private toggle(character: CharacterResponse): void {
     if (this.awaitingOpponent || this.selectionLocked) {
       return;
     }
 
-    const wasSelected = this.selected.includes(character.id);
-    this.selected = toggleSelection(this.selected, character.id, MAX_ROSTER);
+    const wasSelected = this.selected.includes(character.type);
+    this.selected = toggleSelection(this.selected, character.type, MAX_ROSTER);
     this.updateInfo(character);
     this.refresh();
 
@@ -372,10 +373,10 @@ export class CharacterSelectScene extends Phaser.Scene {
     }
 
     const selectionChanged =
-      this.selected.includes(character.id) !== wasSelected;
-    const card = this.cards.get(character.id);
+      this.selected.includes(character.type) !== wasSelected;
+    const card = this.cards.get(character.type);
     if (card && selectionChanged) {
-      const nowSelected = this.selected.includes(character.id);
+      const nowSelected = this.selected.includes(character.type);
       const fromColor = Phaser.Display.Color.IntegerToColor(
         nowSelected ? GAME_PALETTE.LAVENDER : GAME_PALETTE.ROSE,
       );
@@ -403,17 +404,17 @@ export class CharacterSelectScene extends Phaser.Scene {
     }
   }
 
-  private updateInfo(character: GameCharacter): void {
+  private updateInfo(character: CharacterResponse): void {
     if (!this.info) {
       return;
     }
 
     this.info.placeholder.setVisible(false);
     this.info.avatar
-      .setTexture(avatarTextureKey(character.id))
+      .setTexture(avatarTextureKey(character.type))
       .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(true);
-    this.info.name.setVisible(true).setText(character.name);
+    this.info.name.setVisible(true).setText(toDisplayName(character.type));
 
     STAT_LABELS.forEach(({ key }, index) => {
       const value = character.stats[key];

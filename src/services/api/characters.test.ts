@@ -4,7 +4,8 @@ import { apiClient } from "@/services/api/client/apiClient";
 
 const character = {
   type: "VEGA",
-  stats: { intelligence: 8, defense: 9, power: 10, health: 10, refresh: 5 },
+  superpower: "ICE",
+  stats: { intelligence: 8, defense: 9, power: 10, health: 10 },
 };
 
 describe("getCharacters", () => {

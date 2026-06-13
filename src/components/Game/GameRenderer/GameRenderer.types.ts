@@ -1,20 +1,10 @@
+import type {
+  CharacterResponse,
+  CharacterStatsResponse,
+} from "@/services/api/schemas/character";
 import type { GameService } from "@/services/game/gameService";
 
 export type GameMode = "single" | "multiplayer";
-
-export interface CharacterStats {
-  intelligence: number;
-  defense: number;
-  power: number;
-  health: number;
-  refresh: number;
-}
-
-export interface GameCharacter {
-  id: string;
-  name: string;
-  stats: CharacterStats;
-}
 
 /** Which side of the session this client holds once connected. */
 export type SessionRole = "host" | "guest";
@@ -28,25 +18,25 @@ export interface SessionInfo {
 }
 
 export interface StartSceneData {
-  characters: GameCharacter[];
+  characters: CharacterResponse[];
 }
 
 export interface ConnectSceneData {
   mode: GameMode;
-  characters: GameCharacter[];
+  characters: CharacterResponse[];
   /** When set (e.g. from a `?join_id=` deep link), auto-join this session. */
   autoJoinId?: string;
 }
 
 export interface CharacterSelectSceneData {
   mode: GameMode;
-  characters: GameCharacter[];
+  characters: CharacterResponse[];
   session?: SessionInfo;
 }
 
 export interface FightSceneData {
   mode: GameMode;
-  characters: GameCharacter[];
+  characters: CharacterResponse[];
   roster: string[];
   session?: SessionInfo;
 }
@@ -66,7 +56,7 @@ export type FightSide = "player" | "enemy";
 export interface Fighter {
   id: string;
   name: string;
-  stats: CharacterStats;
+  stats: CharacterStatsResponse;
   maxHealth: number;
   health: number;
 }

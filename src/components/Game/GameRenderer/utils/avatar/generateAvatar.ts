@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { GameCharacter } from "../../GameRenderer.types";
+import type { CharacterResponse } from "@/services/api/schemas/character";
 import { AVATAR_GRID, buildAvatarPattern } from "./buildAvatarPattern";
 
 // Each avatar cell is baked this many texture pixels square. The texture is
@@ -11,13 +11,13 @@ const TEXTURE_PX = AVATAR_GRID * CELL_PX;
 /** Stable texture cache key for a character's placeholder avatar. */
 export const avatarTextureKey = (id: string): string => `avatar-${id}`;
 
-const bakeAvatar = (scene: Phaser.Scene, character: GameCharacter): void => {
-  const key = avatarTextureKey(character.id);
+const bakeAvatar = (scene: Phaser.Scene, character: CharacterResponse): void => {
+  const key = avatarTextureKey(character.type);
   if (scene.textures.exists(key)) {
     return;
   }
 
-  const { cells, foreground, background } = buildAvatarPattern(character.id);
+  const { cells, foreground, background } = buildAvatarPattern(character.type);
   const canvas = document.createElement("canvas");
   canvas.width = TEXTURE_PX;
   canvas.height = TEXTURE_PX;
@@ -54,7 +54,7 @@ const bakeAvatar = (scene: Phaser.Scene, character: GameCharacter): void => {
  */
 export const generateAvatarTextures = (
   scene: Phaser.Scene,
-  characters: GameCharacter[],
+  characters: CharacterResponse[],
 ): void => {
   for (const character of characters) {
     bakeAvatar(scene, character);

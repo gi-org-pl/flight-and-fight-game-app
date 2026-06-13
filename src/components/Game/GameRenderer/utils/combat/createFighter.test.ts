@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { GameCharacter } from "../../GameRenderer.types";
+import type { CharacterResponse } from "@/services/api/schemas/character";
 import { createFighter, maxHealthFor } from "./createFighter";
 
-const character: GameCharacter = {
-  id: "IRIS",
-  name: "Iris",
-  stats: { power: 6, intelligence: 9, defense: 6, health: 7, refresh: 8 },
+const character: CharacterResponse = {
+  type: "IRIS",
+  superpower: "LIGHT",
+  stats: { power: 6, intelligence: 9, defense: 6, health: 7 },
 };
 
 describe("createFighter", () => {
