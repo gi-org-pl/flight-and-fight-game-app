@@ -42,3 +42,19 @@ export interface FightSceneData {
 export interface WinnerSceneData {
   winner: string;
 }
+
+/** Which team a fighter belongs to during a fight. */
+export type FightSide = "player" | "enemy";
+
+/**
+ * A character instantiated for combat: the source character plus the mutable
+ * health that ticks down as it takes hits. `health` reaching 0 means it is out
+ * of the fight. Stats stay immutable — only `health` changes during a battle.
+ */
+export interface Fighter {
+  id: string;
+  name: string;
+  stats: CharacterStats;
+  maxHealth: number;
+  health: number;
+}

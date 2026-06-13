@@ -12,6 +12,7 @@ import type {
   GameCharacter,
   SessionInfo,
 } from "../GameRenderer.types";
+import { avatarTextureKey } from "../utils/avatar/generateAvatar";
 import { darkenColor } from "../utils/color/darkenColor";
 import { toggleSelection } from "../utils/selection/toggleSelection";
 import { createBitmapText } from "../utils/text/createBitmapText";
@@ -42,7 +43,6 @@ const NAME_OFFSET_Y = 21;
 const GRID_GAP_X = 3;
 const GRID_GAP_Y = 14;
 const GRID_LEFT = 12;
-const AVATAR_COLOR = 0x00_00_00;
 // Order badge: a small filled square in the card's top-left corner with the
 // pick number on it, so the digit reads against the dark avatar instead of
 // vanishing into it.
@@ -83,13 +83,13 @@ const OPPONENT_SELECT_DELAY_MS = 2500;
 
 interface CardView {
   background: Phaser.GameObjects.Rectangle;
-  avatar: Phaser.GameObjects.Rectangle;
+  avatar: Phaser.GameObjects.Image;
   badge: Phaser.GameObjects.Rectangle;
   order: Phaser.GameObjects.BitmapText;
 }
 
 interface InfoView {
-  avatar: Phaser.GameObjects.Rectangle;
+  avatar: Phaser.GameObjects.Image;
   name: Phaser.GameObjects.BitmapText;
   placeholder: Phaser.GameObjects.BitmapText;
   bars: Phaser.GameObjects.Rectangle[];
@@ -165,14 +165,10 @@ export class CharacterSelectScene extends Phaser.Scene {
         GAME_PALETTE.LAVENDER,
       ).setInteractive({ useHandCursor: true });
 
-      // Black square placeholder standing in for the character avatar.
-      const avatar = this.add.rectangle(
-        x,
-        y + AVATAR_OFFSET_Y,
-        AVATAR_SIZE,
-        AVATAR_SIZE,
-        AVATAR_COLOR,
-      );
+      // Generated placeholder avatar standing in for real character art.
+      const avatar = this.add
+        .image(x, y + AVATAR_OFFSET_Y, avatarTextureKey(character.id))
+        .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE);
       createBitmapText(this, x, y + NAME_OFFSET_Y, character.name, FONT_BODY);
 
       // Selection-order badge: a filled corner square plus the pick number,
@@ -231,13 +227,8 @@ export class CharacterSelectScene extends Phaser.Scene {
     );
 
     const avatar = this.add
-      .rectangle(
-        INFO_X,
-        INFO_TOP + 52,
-        INFO_AVATAR_SIZE,
-        INFO_AVATAR_SIZE,
-        AVATAR_COLOR,
-      )
+      .image(INFO_X, INFO_TOP + 52, "")
+      .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(false);
     const name = createBitmapText(
       this,
@@ -319,7 +310,10 @@ export class CharacterSelectScene extends Phaser.Scene {
     }
 
     this.info.placeholder.setVisible(false);
-    this.info.avatar.setVisible(true);
+    this.info.avatar
+      .setTexture(avatarTextureKey(character.id))
+      .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
+      .setVisible(true);
     this.info.name.setVisible(true).setText(character.name);
 
     STAT_LABELS.forEach(({ key }, index) => {
@@ -340,7 +334,6 @@ export class CharacterSelectScene extends Phaser.Scene {
       card.background.setFillStyle(
         isSelected ? GAME_PALETTE.ROSE : GAME_PALETTE.LAVENDER,
       );
-      card.avatar.setStrokeStyle(isSelected ? 2 : 0, GAME_PALETTE.BLUSH);
       card.badge.setVisible(isSelected);
       card.order.setVisible(isSelected).setText(`${position + 1}`);
     });

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { GAME_FONT } from "../GameRenderer.constants";
+import { CHARACTERS, GAME_FONT } from "../GameRenderer.constants";
+import { generateAvatarTextures } from "../utils/avatar/generateAvatar";
 import { readJoinId } from "../utils/connect/readJoinId";
 import { generateBitmapFont } from "../utils/text/generateBitmapFont";
 import {
@@ -31,6 +32,7 @@ export class BootScene extends Phaser.Scene {
     }
 
     generateBitmapFont(this);
+    generateAvatarTextures(this, CHARACTERS);
 
     // A `?join_id=` deep link (e.g. a scanned share QR) skips the menu and drops
     // straight into the connect scene to auto-join that session.
