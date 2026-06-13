@@ -187,9 +187,11 @@ export class FightScene extends Phaser.Scene {
       .filter((character): character is GameCharacter => Boolean(character));
 
     this.playerTeam = playerCharacters.map(createFighter);
-    this.enemyTeam = createEnemyRoster(data.characters, data.roster, MAX_ROSTER).map(
-      createFighter,
-    );
+    this.enemyTeam = createEnemyRoster(
+      data.characters,
+      data.roster,
+      MAX_ROSTER,
+    ).map(createFighter);
 
     this.playerViews = [];
     this.enemyViews = [];

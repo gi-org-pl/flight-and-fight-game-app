@@ -75,7 +75,10 @@ export class StartScene extends Phaser.Scene {
         fill: GAME_PALETTE.ROSE,
         fontSize: 12,
         onClick: () =>
-          this.transitionTo(CHARACTER_SELECT_SCENE_KEY, { mode: "single", characters: this.characters }),
+          this.transitionTo(CHARACTER_SELECT_SCENE_KEY, {
+            mode: "single",
+            characters: this.characters,
+          }),
       },
     );
     singleBtn.setAlpha(0).setY(BUTTONS_Y + 28);
@@ -109,7 +112,10 @@ export class StartScene extends Phaser.Scene {
         fill: GAME_PALETTE.ROSE,
         fontSize: 12,
         onClick: () =>
-          this.transitionTo(CONNECT_SCENE_KEY, { mode: "multiplayer", characters: this.characters }),
+          this.transitionTo(CONNECT_SCENE_KEY, {
+            mode: "multiplayer",
+            characters: this.characters,
+          }),
       },
     );
     multiBtn.setAlpha(0).setY(BUTTONS_Y + 28);

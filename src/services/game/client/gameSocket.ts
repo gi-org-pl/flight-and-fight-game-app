@@ -1,10 +1,10 @@
+import { io, type Socket } from "socket.io-client";
 import type {
   AttackedPayload,
   CharacterList,
   Exception,
   Session,
-} from '@/services/game/schemas/game';
-import { io, type Socket } from 'socket.io-client';
+} from "@/services/game/schemas/game";
 
 export interface ServerToClientEvents {
   session: (payload: Session) => void;
@@ -23,7 +23,7 @@ export interface ClientToServerEvents {
 export type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 const DEFAULT_GAME_URL =
-  import.meta.env.VITE_GAME_SOCKET_URL ?? 'https://api-faf.gi.org.pl';
+  import.meta.env.VITE_GAME_SOCKET_URL ?? "https://api-faf.gi.org.pl";
 
 export const createGameSocket = (
   playerId: string,
@@ -33,6 +33,6 @@ export const createGameSocket = (
   return io(`${url}/game`, {
     auth: { token: playerId, sessionId },
     autoConnect: false,
-    transports: ['websocket'],
+    transports: ["websocket"],
   });
 };

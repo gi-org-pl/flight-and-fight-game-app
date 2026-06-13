@@ -28,8 +28,20 @@ export const createPanel = (
   const { shadow = darkenColor(fill), bevel = BEVEL } = options;
 
   const base = scene.add.rectangle(x, y, width, height, fill);
-  const bevelBottom = scene.add.rectangle(x, y + (height - bevel) * 0.5, width, bevel, shadow);
-  const bevelRight = scene.add.rectangle(x + (width - bevel) * 0.5, y, bevel, height, shadow);
+  const bevelBottom = scene.add.rectangle(
+    x,
+    y + (height - bevel) * 0.5,
+    width,
+    bevel,
+    shadow,
+  );
+  const bevelRight = scene.add.rectangle(
+    x + (width - bevel) * 0.5,
+    y,
+    bevel,
+    height,
+    shadow,
+  );
 
   return { base, parts: [base, bevelBottom, bevelRight] };
 };

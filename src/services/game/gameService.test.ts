@@ -79,7 +79,10 @@ describe("createGameService", () => {
     it("emits the selectCharacters event with the given ids", () => {
       const service = createGameService("p1", "s1");
       service.selectCharacters(["c1", "c2"]);
-      expect(mockSocket.emit).toHaveBeenCalledWith("selectCharacters", ["c1", "c2"]);
+      expect(mockSocket.emit).toHaveBeenCalledWith("selectCharacters", [
+        "c1",
+        "c2",
+      ]);
     });
   });
 

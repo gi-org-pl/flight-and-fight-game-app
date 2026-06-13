@@ -48,7 +48,8 @@ export const createGameService = (
     disconnect: () => socket.disconnect(),
     attack: () => socket.emit("attack"),
     defend: () => socket.emit("defend"),
-    selectCharacters: (characterIds) => socket.emit("selectCharacters", characterIds),
+    selectCharacters: (characterIds) =>
+      socket.emit("selectCharacters", characterIds),
 
     onSession: (handler) => {
       const wrapped = (raw: unknown) => handler(sessionSchema.parse(raw));

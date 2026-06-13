@@ -200,7 +200,13 @@ export class CharacterSelectScene extends Phaser.Scene {
       const avatar = this.add
         .image(x, y + AVATAR_OFFSET_Y, avatarTextureKey(character.id))
         .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE);
-      const nameLabel = createBitmapText(this, x, y + NAME_OFFSET_Y, character.name, FONT_BODY);
+      const nameLabel = createBitmapText(
+        this,
+        x,
+        y + NAME_OFFSET_Y,
+        character.name,
+        FONT_BODY,
+      );
 
       // Selection-order badge: a filled corner square plus the pick number,
       // drawn over the avatar and hidden until the card is picked.
@@ -247,7 +253,14 @@ export class CharacterSelectScene extends Phaser.Scene {
 
   private buildInfoPanel(): void {
     const centerY = INFO_TOP + INFO_HEIGHT / 2;
-    createPanel(this, INFO_X, centerY, INFO_WIDTH, INFO_HEIGHT, GAME_PALETTE.ORCHID);
+    createPanel(
+      this,
+      INFO_X,
+      centerY,
+      INFO_WIDTH,
+      INFO_HEIGHT,
+      GAME_PALETTE.ORCHID,
+    );
     createBitmapText(
       this,
       INFO_X,
@@ -358,7 +371,8 @@ export class CharacterSelectScene extends Phaser.Scene {
       this.session?.gameService?.selectCharacters(this.selected);
     }
 
-    const selectionChanged = this.selected.includes(character.id) !== wasSelected;
+    const selectionChanged =
+      this.selected.includes(character.id) !== wasSelected;
     const card = this.cards.get(character.id);
     if (card && selectionChanged) {
       const nowSelected = this.selected.includes(character.id);
@@ -445,7 +459,11 @@ export class CharacterSelectScene extends Phaser.Scene {
     }
 
     this.status
-      ?.setText(ready ? "Roster locked!" : `Selected ${this.selected.length}/${MAX_ROSTER}`)
+      ?.setText(
+        ready
+          ? "Roster locked!"
+          : `Selected ${this.selected.length}/${MAX_ROSTER}`,
+      )
       .setTint(ready ? TEXT_COLOR_NUMBER : GAME_PALETTE.RED);
     this.flightButton?.setAlpha(ready ? 1 : 0.4);
   }

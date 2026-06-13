@@ -34,7 +34,10 @@ const RecallQte = ({ definition, onComplete }: RecallQteProps) => {
   useEffect(() => {
     if (phase !== "memorize") return;
 
-    const revealInterval = Math.min(600, params.memorizeMs / (params.sequence.length + 1));
+    const revealInterval = Math.min(
+      600,
+      params.memorizeMs / (params.sequence.length + 1),
+    );
     const interval = setInterval(() => {
       setVisibleCount((prev) => {
         if (prev >= params.sequence.length) {

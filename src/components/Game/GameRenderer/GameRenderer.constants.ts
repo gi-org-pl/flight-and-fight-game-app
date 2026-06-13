@@ -38,4 +38,3 @@ export const HOME_BG_KEY = "home-bg";
 export const MAX_ROSTER = 5;
 // Stats are scored on this scale; the info-panel bars fill relative to it.
 export const MAX_STAT = 10;
-
