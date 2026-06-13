@@ -1,26 +1,26 @@
-import { COLORS } from '@/constants/common';
-import { createSession, getSession, joinSession } from '@/services/api';
-import Phaser from 'phaser';
+import Phaser from "phaser";
+import { COLORS } from "@/constants/common";
+import { createSession, getSession, joinSession } from "@/services/api";
 import {
   GAME_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
-} from '../GameRenderer.constants';
+} from "../GameRenderer.constants";
 import type {
   ConnectSceneData,
   GameMode,
   SessionInfo,
-} from '../GameRenderer.types';
-import { createBitmapText } from '../utils/text/createBitmapText';
-import { type Debounced, debounce } from '../utils/timing/debounce';
-import { createButton } from '../utils/widgets/createButton';
-import { createPanel } from '../utils/widgets/createPanel';
+} from "../GameRenderer.types";
+import { createBitmapText } from "../utils/text/createBitmapText";
+import { type Debounced, debounce } from "../utils/timing/debounce";
+import { createButton } from "../utils/widgets/createButton";
+import { createPanel } from "../utils/widgets/createPanel";
 import {
   CHARACTER_SELECT_SCENE_KEY,
   CONNECT_SCENE_KEY,
   START_SCENE_KEY,
-} from './sceneKeys';
+} from "./sceneKeys";
 
 const FONT_HEADER = 16;
 const FONT_BODY = 8;
@@ -51,12 +51,12 @@ const JOIN_DEBOUNCE_MS = 500;
 
 // JOIN side reports on the typed-id check; SHARE side reports on the hosted
 // session we expose for the opponent to join.
-const JOIN_WAITING = 'Waiting for input';
-const JOIN_JOINING = 'Joining...';
-const SHARE_WAITING = 'Waiting for the other player';
+const JOIN_WAITING = "Waiting for input";
+const JOIN_JOINING = "Joining...";
+const SHARE_WAITING = "Waiting for the other player";
 
 export class ConnectScene extends Phaser.Scene {
-  private mode: GameMode = 'multiplayer';
+  private mode: GameMode = "multiplayer";
   private sessionId?: string;
   private playerId?: string;
   // Latches once we hand off to the next scene so a slow poll/join that
@@ -110,7 +110,7 @@ export class ConnectScene extends Phaser.Scene {
     );
 
     // --- JOIN (left) ---
-    createBitmapText(this, LEFT_CX, HEADER_Y, 'JOIN', FONT_HEADER);
+    createBitmapText(this, LEFT_CX, HEADER_Y, "JOIN", FONT_HEADER);
     this.joinInput = this.buildInput();
     this.joinStatus = createBitmapText(
       this,
@@ -120,14 +120,14 @@ export class ConnectScene extends Phaser.Scene {
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     );
-    createButton(this, LEFT_CX, BOTTOM_Y, 'Leave', {
+    createButton(this, LEFT_CX, BOTTOM_Y, "Leave", {
       width: 100,
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });
 
     // --- SHARE (right) ---
-    createBitmapText(this, RIGHT_CX, HEADER_Y, 'SHARE', FONT_HEADER);
+    createBitmapText(this, RIGHT_CX, HEADER_Y, "SHARE", FONT_HEADER);
     this.buildShareBox();
     this.shareStatus = createBitmapText(
       this,
@@ -140,29 +140,29 @@ export class ConnectScene extends Phaser.Scene {
   }
 
   private buildInput(): HTMLInputElement {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = 'Session ID';
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Session ID";
     input.maxLength = 64;
     // Mirror the in-canvas NES widgets: blush fill, the baked pixel font, and a
     // hard bottom/right bevel (the panels' `inset -2px -2px` look) — no rounded
     // corners or anti-aliased borders, so the DOM field reads as one of them.
     input.style.cssText = [
-      'width:150px',
-      'height:22px',
-      'box-sizing:border-box',
-      'padding:0 6px',
-      'border:none',
+      "width:150px",
+      "height:22px",
+      "box-sizing:border-box",
+      "padding:0 6px",
+      "border:none",
       `background:${COLORS.BLUSH}`,
-      'color:#1a1a2e',
+      "color:#1a1a2e",
       `font-family:'${GAME_FONT}',monospace`,
-      'font-size:8px',
-      'text-align:center',
-      'outline:none',
+      "font-size:8px",
+      "text-align:center",
+      "outline:none",
       `box-shadow:inset -2px -2px 0 0 ${COLORS.ROSE}`,
-    ].join(';');
+    ].join(";");
 
-    input.addEventListener('input', () => {
+    input.addEventListener("input", () => {
       const value = input.value.trim();
       if (!value) {
         this.joinDebounced?.cancel();
@@ -191,19 +191,19 @@ export class ConnectScene extends Phaser.Scene {
       this,
       RIGHT_CX,
       SHARE_BOX_Y,
-      '...',
+      "...",
       FONT_BODY,
     );
     this.shareHint = createBitmapText(
       this,
       RIGHT_CX,
       SHARE_HINT_Y,
-      'Click to copy ID',
+      "Click to copy ID",
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     );
 
-    box.on('pointerup', () => this.copyId());
+    box.on("pointerup", () => this.copyId());
   }
 
   private copyId(): void {
@@ -212,7 +212,7 @@ export class ConnectScene extends Phaser.Scene {
     }
 
     void globalThis.navigator?.clipboard?.writeText(this.sessionId);
-    this.shareHint?.setText('Copied!');
+    this.shareHint?.setText("Copied!");
   }
 
   private async hostSession(): Promise<void> {
@@ -258,7 +258,7 @@ export class ConnectScene extends Phaser.Scene {
         this.proceed({
           sessionId: this.sessionId,
           playerId: this.playerId,
-          role: 'host',
+          role: "host",
         });
       }
     } catch (error) {
@@ -279,7 +279,7 @@ export class ConnectScene extends Phaser.Scene {
 
     try {
       const credentials = await joinSession(sessionId);
-      this.proceed({ ...credentials, role: 'guest' });
+      this.proceed({ ...credentials, role: "guest" });
     } catch (error) {
       this.setJoinStatus(this.toMessage(error));
     }
@@ -305,7 +305,7 @@ export class ConnectScene extends Phaser.Scene {
   }
 
   private toMessage(error: unknown): string {
-    return error instanceof Error ? error.message : 'Connection failed';
+    return error instanceof Error ? error.message : "Connection failed";
   }
 
   private cleanup(): void {

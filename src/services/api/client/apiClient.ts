@@ -1,11 +1,11 @@
+import axios, { type AxiosInstance } from "axios";
 import {
   attachAuthToken,
   normalizeApiError,
-} from '@/services/api/utils/interceptors';
-import axios, { type AxiosInstance } from 'axios';
+} from "@/services/api/utils/interceptors";
 
 /** Falls back to the local development server from the OpenAPI document. */
-const DEFAULT_BASE_URL = 'https://api-faf.gi.org.pl/';
+const DEFAULT_BASE_URL = "https://api-faf.gi.org.pl/";
 
 /**
  * Builds an Axios instance pre-wired with the auth + error-normalisation
@@ -16,7 +16,7 @@ export const createApiClient = (
 ): AxiosInstance => {
   const client = axios.create({
     baseURL,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
   });
 
   client.interceptors.request.use(attachAuthToken);
