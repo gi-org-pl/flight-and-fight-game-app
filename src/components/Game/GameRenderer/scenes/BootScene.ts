@@ -1,7 +1,12 @@
 import Phaser from "phaser";
 import { GAME_FONT } from "../GameRenderer.constants";
+import { readJoinId } from "../utils/connect/readJoinId";
 import { generateBitmapFont } from "../utils/text/generateBitmapFont";
-import { BOOT_SCENE_KEY, START_SCENE_KEY } from "./sceneKeys";
+import {
+  BOOT_SCENE_KEY,
+  CONNECT_SCENE_KEY,
+  START_SCENE_KEY,
+} from "./sceneKeys";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -26,6 +31,18 @@ export class BootScene extends Phaser.Scene {
     }
 
     generateBitmapFont(this);
+
+    // A `?join_id=` deep link (e.g. a scanned share QR) skips the menu and drops
+    // straight into the connect scene to auto-join that session.
+    const joinId = readJoinId(globalThis.location.search);
+    if (joinId) {
+      this.scene.start(CONNECT_SCENE_KEY, {
+        mode: "multiplayer",
+        autoJoinId: joinId,
+      });
+      return;
+    }
+
     this.scene.start(START_SCENE_KEY);
   }
 }

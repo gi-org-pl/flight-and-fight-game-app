@@ -6,8 +6,8 @@ import {
 } from "../../GameRenderer.constants";
 import { BootScene } from "../../scenes/BootScene";
 import { CharacterSelectScene } from "../../scenes/CharacterSelectScene";
+import { ConnectScene } from "../../scenes/ConnectScene";
 import { FightScene } from "../../scenes/FightScene";
-import { MatchmakingScene } from "../../scenes/MatchmakingScene";
 import { StartScene } from "../../scenes/StartScene";
 import { WinnerScene } from "../../scenes/WinnerScene";
 
@@ -20,6 +20,9 @@ export const createGameConfig = (
   height: GAME_HEIGHT,
   backgroundColor: BACKGROUND_COLOR,
   pixelArt: true,
+  // The connect scene overlays real <input>/<img> DOM nodes (session-id field,
+  // QR code) on top of the canvas, which needs the DOM container enabled.
+  dom: { createContainer: true },
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -27,7 +30,7 @@ export const createGameConfig = (
   scene: [
     BootScene,
     StartScene,
-    MatchmakingScene,
+    ConnectScene,
     CharacterSelectScene,
     FightScene,
     WinnerScene,

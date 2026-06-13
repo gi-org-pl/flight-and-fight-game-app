@@ -9,7 +9,7 @@ import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
 import {
   CHARACTER_SELECT_SCENE_KEY,
-  MATCHMAKING_SCENE_KEY,
+  CONNECT_SCENE_KEY,
   START_SCENE_KEY,
 } from "./sceneKeys";
 
@@ -63,7 +63,7 @@ export class StartScene extends Phaser.Scene {
 
   private start(): void {
     if (this.mode === "multiplayer") {
-      this.scene.start(MATCHMAKING_SCENE_KEY, { mode: this.mode });
+      this.scene.start(CONNECT_SCENE_KEY, { mode: this.mode });
       return;
     }
 

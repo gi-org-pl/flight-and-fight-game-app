@@ -10,6 +10,7 @@ import {
 import type {
   CharacterSelectSceneData,
   GameCharacter,
+  SessionInfo,
 } from "../GameRenderer.types";
 import { darkenColor } from "../utils/color/darkenColor";
 import { toggleSelection } from "../utils/selection/toggleSelection";
@@ -97,6 +98,7 @@ interface InfoView {
 
 export class CharacterSelectScene extends Phaser.Scene {
   private mode: CharacterSelectSceneData["mode"] = "single";
+  private session?: SessionInfo;
   private selected: string[] = [];
   private opponentReady = true;
   private awaitingOpponent = false;
@@ -111,6 +113,7 @@ export class CharacterSelectScene extends Phaser.Scene {
 
   create(data: CharacterSelectSceneData): void {
     this.mode = data.mode;
+    this.session = data.session;
     this.selected = [];
     this.awaitingOpponent = false;
     // Single-player has no opponent to wait on, so it starts ready.
@@ -388,6 +391,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.scene.start(FIGHT_SCENE_KEY, {
       mode: this.mode,
       roster: this.selected,
+      session: this.session,
     });
   }
 }
