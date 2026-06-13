@@ -30,6 +30,7 @@ export const getSessionResponseSchema = z.object({
   state: sessionStateSchema,
   firstPlayerId: z.string(),
   secondPlayerId: z.string().nullable(),
+  currentlyAttackingPlayerId: z.string().nullable(),
 });
 
 export type GetSessionResponse = z.infer<typeof getSessionResponseSchema>;

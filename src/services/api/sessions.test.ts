@@ -7,6 +7,7 @@ import {
 } from "@/services/api/sessions";
 
 const credentials = { sessionId: "s-1", playerId: "p-1" };
+const characters = ["IRIS", "VEGA"] as const;
 
 describe("createSession", () => {
   afterEach(() => {
@@ -14,14 +15,14 @@ describe("createSession", () => {
   });
 
   describe("when the API returns valid credentials", () => {
-    it("posts to /sessions and returns the parsed credentials", async () => {
+    it("posts to /sessions with characters and returns the parsed credentials", async () => {
       const postSpy = vi
         .spyOn(apiClient, "post")
         .mockResolvedValue({ data: credentials });
 
-      const result = await createSession();
+      const result = await createSession([...characters]);
 
-      expect(postSpy).toHaveBeenCalledWith("/sessions");
+      expect(postSpy).toHaveBeenCalledWith("/sessions", { characters });
       expect(result).toEqual(credentials);
     });
   });
@@ -30,7 +31,7 @@ describe("createSession", () => {
     it("throws a validation error", async () => {
       vi.spyOn(apiClient, "post").mockResolvedValue({ data: { sessionId: 1 } });
 
-      await expect(createSession()).rejects.toThrow(
+      await expect(createSession([...characters])).rejects.toThrow(
         "API response validation failed",
       );
     });
@@ -43,14 +44,14 @@ describe("joinSession", () => {
   });
 
   describe("when joining an open session", () => {
-    it("posts to the join path with the session id", async () => {
+    it("posts to the join path with the code and characters", async () => {
       const postSpy = vi
         .spyOn(apiClient, "post")
         .mockResolvedValue({ data: credentials });
 
-      const result = await joinSession("s-1");
+      const result = await joinSession("RRFFQ69G", [...characters]);
 
-      expect(postSpy).toHaveBeenCalledWith("/sessions/s-1/join");
+      expect(postSpy).toHaveBeenCalledWith("/sessions/RRFFQ69G/join", { characters });
       expect(result).toEqual(credentials);
     });
   });
@@ -68,6 +69,7 @@ describe("getSession", () => {
         state: "OPEN",
         firstPlayerId: "p-1",
         secondPlayerId: null,
+        currentlyAttackingPlayerId: null,
       };
       const getSpy = vi
         .spyOn(apiClient, "get")

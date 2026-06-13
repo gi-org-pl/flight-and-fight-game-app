@@ -1,6 +1,6 @@
-import { useState } from "react";
 import { QTE_DEFINITIONS } from "@/constants/qte";
 import type { QteDefinition } from "@/types/qte";
+import { useState } from "react";
 import QteOverlay from "../qte/QteOverlay/QteOverlay";
 import GameBackground from "./GameBackground/GameBackground";
 import GameRenderer from "./GameRenderer/GameRenderer";
@@ -17,7 +17,10 @@ const Game = () => {
     <div className="w-full h-lvh bg-color-blush flex items-center justify-center bg-blush relative">
       <GameBackground />
       <div className="flex gap-4 flex-col">
-        <div className="nes-container with-title is-dark is-centered">
+        <div
+          className="nes-container with-title is-dark is-centered"
+          style={{ padding: 0 }}
+        >
           <GameRenderer className="w-[960px] h-[540px]" />
         </div>
         <div className="flex justify-between items-center z-10">

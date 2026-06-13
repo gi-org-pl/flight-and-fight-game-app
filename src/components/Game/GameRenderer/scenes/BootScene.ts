@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { CHARACTERS, GAME_FONT } from "../GameRenderer.constants";
+import homeBg from "@/assets/images/home/main-bg.png?url";
+import { CHARACTERS, GAME_FONT, HOME_BG_KEY } from "../GameRenderer.constants";
 import { generateAvatarTextures } from "../utils/avatar/generateAvatar";
 import { readJoinId } from "../utils/connect/readJoinId";
 import { generateBitmapFont } from "../utils/text/generateBitmapFont";
@@ -12,6 +13,10 @@ import {
 export class BootScene extends Phaser.Scene {
   constructor() {
     super(BOOT_SCENE_KEY);
+  }
+
+  preload(): void {
+    this.load.image(HOME_BG_KEY, homeBg);
   }
 
   // Bake the bitmap font from the web font before any scene renders text, then

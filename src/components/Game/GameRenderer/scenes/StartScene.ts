@@ -3,8 +3,8 @@ import {
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
+  HOME_BG_KEY,
 } from "../GameRenderer.constants";
-import type { GameMode } from "../GameRenderer.types";
 import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
 import {
@@ -14,59 +14,41 @@ import {
 } from "./sceneKeys";
 
 export class StartScene extends Phaser.Scene {
-  private mode: GameMode = "single";
-  private singleButton?: Phaser.GameObjects.Container;
-  private multiButton?: Phaser.GameObjects.Container;
-
   constructor() {
     super(START_SCENE_KEY);
   }
 
   create(): void {
-    this.mode = "single";
+    this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, HOME_BG_KEY);
 
     createBitmapText(this, GAME_WIDTH / 2, 55, "Flight and Fight", 20);
 
-    this.singleButton = createButton(
+    createButton(
       this,
-      GAME_WIDTH / 2 - 75,
-      125,
+      GAME_WIDTH / 2 - 115,
+      GAME_HEIGHT - 45,
       "Single Player",
-      { width: 140, onClick: () => this.selectMode("single") },
+      {
+        width: 200,
+        height: 40,
+        fill: GAME_PALETTE.ROSE,
+        fontSize: 12,
+        onClick: () => this.scene.start(CHARACTER_SELECT_SCENE_KEY, { mode: "single" }),
+      },
     );
-    this.multiButton = createButton(
+
+    createButton(
       this,
-      GAME_WIDTH / 2 + 75,
-      125,
+      GAME_WIDTH / 2 + 115,
+      GAME_HEIGHT - 45,
       "Multiplayer",
-      { width: 140, onClick: () => this.selectMode("multiplayer") },
+      {
+        width: 200,
+        height: 40,
+        fill: GAME_PALETTE.ROSE,
+        fontSize: 12,
+        onClick: () => this.scene.start(CONNECT_SCENE_KEY, { mode: "multiplayer" }),
+      },
     );
-
-    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 45, "Start", {
-      fill: GAME_PALETTE.ROSE,
-      fontSize: 14,
-      onClick: () => this.start(),
-    });
-
-    this.refreshModeHighlight();
-  }
-
-  private selectMode(mode: GameMode): void {
-    this.mode = mode;
-    this.refreshModeHighlight();
-  }
-
-  private refreshModeHighlight(): void {
-    this.singleButton?.setAlpha(this.mode === "single" ? 1 : 0.5);
-    this.multiButton?.setAlpha(this.mode === "multiplayer" ? 1 : 0.5);
-  }
-
-  private start(): void {
-    if (this.mode === "multiplayer") {
-      this.scene.start(CONNECT_SCENE_KEY, { mode: this.mode });
-      return;
-    }
-
-    this.scene.start(CHARACTER_SELECT_SCENE_KEY, { mode: this.mode });
   }
 }

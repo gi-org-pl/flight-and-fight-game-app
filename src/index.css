@@ -17,6 +17,10 @@ samp {
   --color-orchid: #d1a8d9;
   --color-lavender: #ae9ee1;
   --color-periwinkle: #939adf;
+  --color-mauve: #574f71;
+  --color-red: #e87e7e;
+  --color-green: #8ce985;
+  --color-orange: #f5b770;
 }
 
 @theme {
@@ -25,6 +29,10 @@ samp {
   --color-orchid: var(--color-orchid);
   --color-lavender: var(--color-lavender);
   --color-periwinkle: var(--color-periwinkle);
+  --color-mauve: var(--color-mauve);
+  --color-red: var(--color-red);
+  --color-green: var(--color-green);
+  --color-orange: var(--color-orange);
 
   --animate-bg-drift: bg-drift 60s linear infinite;
   --animate-bg-drift-sh: bg-drift 90s linear infinite;
@@ -40,10 +48,6 @@ samp {
       background-position-x: calc((556 / 156) * 100lvh * -1);
     }
   }
-}
-
-.nes-container.is-dark {
-  background: var(--color-periwinkle);
 }
 
 @keyframes timing-cursor-bounce {

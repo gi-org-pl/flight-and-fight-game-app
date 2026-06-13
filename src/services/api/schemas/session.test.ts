@@ -42,12 +42,13 @@ describe("sessionCredentialsResponseSchema", () => {
 
 describe("getSessionResponseSchema", () => {
   describe("when the session is still open", () => {
-    it("accepts a null secondPlayerId", () => {
+    it("accepts null secondPlayerId and currentlyAttackingPlayerId", () => {
       const payload = {
         id: "s-1",
         state: "OPEN",
         firstPlayerId: "p-1",
         secondPlayerId: null,
+        currentlyAttackingPlayerId: null,
       };
 
       expect(getSessionResponseSchema.parse(payload)).toEqual(payload);
@@ -55,12 +56,13 @@ describe("getSessionResponseSchema", () => {
   });
 
   describe("when the session is closed", () => {
-    it("accepts a populated secondPlayerId", () => {
+    it("accepts populated secondPlayerId and currentlyAttackingPlayerId", () => {
       const payload = {
         id: "s-1",
         state: "CLOSED",
         firstPlayerId: "p-1",
         secondPlayerId: "p-2",
+        currentlyAttackingPlayerId: "p-1",
       };
 
       expect(getSessionResponseSchema.parse(payload)).toEqual(payload);
@@ -74,6 +76,7 @@ describe("getSessionResponseSchema", () => {
         state: "DONE",
         firstPlayerId: "p-1",
         secondPlayerId: null,
+        currentlyAttackingPlayerId: null,
       });
 
       expect(result.success).toBe(false);

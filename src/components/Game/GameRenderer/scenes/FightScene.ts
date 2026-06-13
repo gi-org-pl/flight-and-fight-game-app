@@ -120,6 +120,17 @@ export class FightScene extends Phaser.Scene {
   create(data: FightSceneData): void {
     this.resetState(data);
 
+    const overlay = this.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, GAME_PALETTE.PERIWINKLE)
+      .setAlpha(1);
+
+    this.tweens.add({
+      targets: overlay,
+      alpha: 0.9,
+      duration: 600,
+      ease: "Cubic.Out",
+    });
+
     createBitmapText(this, GAME_WIDTH / 2, VS_Y, "VS", FONT_TITLE);
     this.roundText = createBitmapText(this, GAME_WIDTH / 2, 12, "", FONT_BODY);
 
@@ -207,7 +218,7 @@ export class FightScene extends Phaser.Scene {
         TEAM_BAR_Y,
         TEAM_BAR_WIDTH,
         TEAM_BAR_HEIGHT,
-        GAME_PALETTE.ROSE,
+        GAME_PALETTE.GREEN,
       )
       .setOrigin(0, 0.5);
 
@@ -254,7 +265,7 @@ export class FightScene extends Phaser.Scene {
           HP_BAR_OFFSET_Y,
           HP_BAR_WIDTH,
           HP_BAR_HEIGHT,
-          GAME_PALETTE.ROSE,
+          GAME_PALETTE.GREEN,
         )
         .setOrigin(0, 0.5);
 
@@ -306,7 +317,7 @@ export class FightScene extends Phaser.Scene {
       "Attack",
       {
         width: 140,
-        fill: GAME_PALETTE.ROSE,
+        fill: GAME_PALETTE.RED,
         onClick: () => this.attack(),
       },
     );

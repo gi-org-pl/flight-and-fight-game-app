@@ -1,3 +1,4 @@
+import { COLORS } from "@/constants/common";
 import MashQte from "../MashQte/MashQte";
 import RecallQte from "../RecallQte/RecallQte";
 import SequenceQte from "../SequenceQte/SequenceQte";
@@ -20,10 +21,10 @@ const DIFFICULTY_LABEL: Record<number, string> = {
 
 const QteOverlay = ({ definition, onClose }: QteOverlayProps) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-periwinkle/90">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-mauve/50">
       <div
-        className="nes-container with-title is-dark animate-qte-enter"
-        style={{ minWidth: 360 }}
+        className="nes-container with-title animate-qte-enter is-dark"
+        style={{ minWidth: 360, background: COLORS.MAUVE }}
       >
         <p className="title">
           {ROLE_LABEL[definition.role]} — LVL{" "}
