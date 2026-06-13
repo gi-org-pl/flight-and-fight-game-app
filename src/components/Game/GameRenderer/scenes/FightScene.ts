@@ -20,6 +20,7 @@ import { createEnemyRoster } from "../utils/combat/createEnemyRoster";
 import { createFighter } from "../utils/combat/createFighter";
 import { isAlive, isTeamDefeated } from "../utils/combat/nextAliveIndex";
 import { wedgePositions } from "../utils/layout/wedgePositions";
+import { fadeToScene } from "../utils/scene/fadeToScene";
 import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
 import { FIGHT_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
@@ -314,7 +315,7 @@ export class FightScene extends Phaser.Scene {
       width: 96,
       fill: GAME_PALETTE.ORCHID,
       onClick: () =>
-        this.scene.start(WINNER_SCENE_KEY, { winner: this.opponentLabel }),
+        fadeToScene(this, WINNER_SCENE_KEY, { winner: this.opponentLabel }),
     });
     this.attackButton = createButton(
       this,
@@ -437,7 +438,7 @@ export class FightScene extends Phaser.Scene {
     this.refresh();
     this.time.delayedCall(ENEMY_TURN_DELAY_MS * 2, () => {
       if (this.sys.isActive()) {
-        this.scene.start(WINNER_SCENE_KEY, { winner });
+        fadeToScene(this, WINNER_SCENE_KEY, { winner });
       }
     });
     return true;

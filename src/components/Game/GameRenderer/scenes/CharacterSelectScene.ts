@@ -1,4 +1,4 @@
-import Phaser from "phaser";
+import Phaser from 'phaser';
 import {
   CHARACTERS,
   GAME_HEIGHT,
@@ -6,23 +6,24 @@ import {
   GAME_WIDTH,
   MAX_ROSTER,
   MAX_STAT,
-} from "../GameRenderer.constants";
+} from '../GameRenderer.constants';
 import type {
   CharacterSelectSceneData,
   GameCharacter,
   SessionInfo,
-} from "../GameRenderer.types";
-import { avatarTextureKey } from "../utils/avatar/generateAvatar";
-import { darkenColor } from "../utils/color/darkenColor";
-import { toggleSelection } from "../utils/selection/toggleSelection";
-import { createBitmapText } from "../utils/text/createBitmapText";
-import { createButton } from "../utils/widgets/createButton";
-import { createPanel } from "../utils/widgets/createPanel";
+} from '../GameRenderer.types';
+import { avatarTextureKey } from '../utils/avatar/generateAvatar';
+import { darkenColor } from '../utils/color/darkenColor';
+import { toggleSelection } from '../utils/selection/toggleSelection';
+import { createBitmapText } from '../utils/text/createBitmapText';
+import { fadeToScene } from '../utils/scene/fadeToScene';
+import { createButton } from '../utils/widgets/createButton';
+import { createPanel } from '../utils/widgets/createPanel';
 import {
   CHARACTER_SELECT_SCENE_KEY,
   FIGHT_SCENE_KEY,
   START_SCENE_KEY,
-} from "./sceneKeys";
+} from './sceneKeys';
 
 // The bitmap font is baked at 16px (NATIVE_PX) from Press Start 2P — itself an
 // 8px-grid face. Only 16 and 8 land on a clean integer downscale of the atlas;
@@ -54,16 +55,23 @@ const INFO_X = 394;
 const INFO_TOP = 46;
 const INFO_WIDTH = 150;
 const INFO_HEIGHT = 168;
-const INFO_AVATAR_SIZE = 44;
-// Stat rows: label (left) — bar — value (right), the whole block symmetric
-// about INFO_X so the panel padding matches on both sides.
+// Avatar pinned to the top-left corner of the info panel.
+const INFO_AVATAR_SIZE = 40;
+const INFO_PANEL_LEFT = INFO_X - INFO_WIDTH / 2;   // 319
+const INFO_AVATAR_X = INFO_PANEL_LEFT + 8 + INFO_AVATAR_SIZE / 2;  // 347
+// FIGHTER label sits at INFO_TOP+14 (8px tall) → bottom ≈64; push avatar below it.
+const INFO_AVATAR_Y = INFO_TOP + 26 + INFO_AVATAR_SIZE / 2;         // 92
+// Name centered in the space to the right of the avatar.
+const INFO_NAME_X = Math.round((INFO_PANEL_LEFT + INFO_AVATAR_SIZE + 12 + INFO_X + INFO_WIDTH / 2) / 2); // ≈418
+const INFO_NAME_Y = INFO_AVATAR_Y;
+// Stat rows: label (left) — bar — value (right).
 const STAT_LABEL_X = 346;
 const STAT_VALUE_X = 446;
 const STAT_BAR_LEFT = 364;
 const STAT_BAR_MAX_WIDTH = 68;
 const STAT_BAR_HEIGHT = 8;
-const STAT_ROW_GAP = 18;
-const STAT_FIRST_ROW_Y = 164;
+const STAT_ROW_GAP = 14;
+const STAT_FIRST_ROW_Y = INFO_AVATAR_Y + INFO_AVATAR_SIZE / 2 + 16;  // 110
 
 // Two grid rows, vertically centered against the info panel so the columns and
 // the card line up along the same band.
@@ -71,10 +79,11 @@ const GRID_BLOCK_HEIGHT = 2 * CELL_HEIGHT + GRID_GAP_Y;
 const GRID_TOP =
   INFO_TOP + (INFO_HEIGHT - GRID_BLOCK_HEIGHT) / 2 + CELL_HEIGHT / 2;
 
-const STAT_LABELS: { key: keyof GameCharacter["stats"]; label: string }[] = [
-  { key: "power", label: "PWR" },
-  { key: "speed", label: "SPD" },
-  { key: "defense", label: "DEF" },
+const STAT_LABELS: { key: keyof GameCharacter['stats']; label: string }[] = [
+  { key: 'health', label: 'HP' },
+  { key: 'power', label: 'PWR' },
+  { key: 'intelligence', label: 'INT' },
+  { key: 'defense', label: 'DEF' },
 ];
 
 // Mocked latency before the (fake) opponent locks in their roster. The waiting
@@ -97,7 +106,7 @@ interface InfoView {
 }
 
 export class CharacterSelectScene extends Phaser.Scene {
-  private mode: CharacterSelectSceneData["mode"] = "single";
+  private mode: CharacterSelectSceneData['mode'] = 'single';
   private session?: SessionInfo;
   private selected: string[] = [];
   private opponentReady = true;
@@ -117,7 +126,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.selected = [];
     this.awaitingOpponent = false;
     // Single-player has no opponent to wait on, so it starts ready.
-    this.opponentReady = data.mode === "single";
+    this.opponentReady = data.mode === 'single';
     this.cards = new Map();
 
     createBitmapText(
@@ -131,7 +140,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       36,
-      "Pick order sets your fight sequence",
+      'Pick order sets your fight sequence',
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     );
@@ -140,7 +149,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.buildInfoPanel();
     this.buildControls();
 
-    if (this.mode === "multiplayer") {
+    if (this.mode === 'multiplayer') {
       this.time.delayedCall(OPPONENT_SELECT_DELAY_MS, () =>
         this.onOpponentReady(),
       );
@@ -188,12 +197,12 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         badgeX,
         badgeY,
-        "",
+        '',
         FONT_BODY,
       ).setVisible(false);
 
-      background.on("pointerover", () => this.updateInfo(character));
-      background.on("pointerup", () => this.toggle(character));
+      background.on('pointerover', () => this.updateInfo(character));
+      background.on('pointerup', () => this.toggle(character));
 
       this.cards.set(character.id, { background, avatar, badge, order });
     });
@@ -213,7 +222,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       INFO_TOP + 14,
-      "FIGHTER",
+      'FIGHTER',
       FONT_BODY,
     ).setAlpha(0.5);
 
@@ -221,20 +230,20 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       centerY,
-      "Hover a fighter",
+      'Hover a fighter',
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     );
 
     const avatar = this.add
-      .image(INFO_X, INFO_TOP + 52, "")
+      .image(INFO_AVATAR_X, INFO_AVATAR_Y, '')
       .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(false);
     const name = createBitmapText(
       this,
-      INFO_X,
-      INFO_TOP + 92,
-      "",
+      INFO_NAME_X,
+      INFO_NAME_Y,
+      '',
       FONT_HEADER,
     ).setVisible(false);
 
@@ -259,7 +268,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         STAT_VALUE_X,
         rowY,
-        "",
+        '',
         FONT_BODY,
       ).setVisible(false);
       bars.push(fill);
@@ -274,18 +283,18 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     // Status sits on the left; the actions group to the right so the bottom
     // strip reads "info | actions" and has room to breathe.
-    createButton(this, GRID_LEFT + 42, rowY, "Leave", {
+    createButton(this, GRID_LEFT + 42, rowY, 'Leave', {
       width: 84,
       fill: GAME_PALETTE.ORCHID,
-      onClick: () => this.scene.start(START_SCENE_KEY),
+      onClick: () => fadeToScene(this, START_SCENE_KEY),
     });
 
-    this.status = createBitmapText(this, 206, rowY, "", FONT_BODY).setOrigin(
+    this.status = createBitmapText(this, 206, rowY, '', FONT_BODY).setOrigin(
       0.5,
       0.5,
     );
 
-    this.flightButton = createButton(this, 388, rowY, "Flight or Fight", {
+    this.flightButton = createButton(this, 388, rowY, 'Flight or Fight', {
       width: 160,
       fill: GAME_PALETTE.ROSE,
       onClick: () => this.confirm(),
@@ -343,14 +352,14 @@ export class CharacterSelectScene extends Phaser.Scene {
     const ready = this.selected.length === MAX_ROSTER;
 
     if (this.awaitingOpponent) {
-      this.status?.setText("Waiting for opponent...");
+      this.status?.setText('Waiting for opponent...');
       this.flightButton?.setAlpha(0.4);
       return;
     }
 
     this.status?.setText(
       ready
-        ? "Roster locked!"
+        ? 'Roster locked!'
         : `Selected ${this.selected.length}/${MAX_ROSTER}`,
     );
     this.flightButton?.setAlpha(ready ? 1 : 0.4);
@@ -379,7 +388,7 @@ export class CharacterSelectScene extends Phaser.Scene {
   }
 
   private startFight(): void {
-    this.scene.start(FIGHT_SCENE_KEY, {
+    fadeToScene(this, FIGHT_SCENE_KEY, {
       mode: this.mode,
       roster: this.selected,
       session: this.session,

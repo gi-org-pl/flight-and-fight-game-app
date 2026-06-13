@@ -40,16 +40,15 @@ export const MAX_ROSTER = 5;
 // Stats are scored on this scale; the info-panel bars fill relative to it.
 export const MAX_STAT = 10;
 
-// Mocked roster — stats stand in for an API the game is not wired to yet.
 export const CHARACTERS: GameCharacter[] = [
-  { id: "c1", name: "Falcon", stats: { power: 7, speed: 8, defense: 5 } },
-  { id: "c2", name: "Viper", stats: { power: 9, speed: 6, defense: 4 } },
-  { id: "c3", name: "Comet", stats: { power: 5, speed: 10, defense: 3 } },
-  { id: "c4", name: "Raptor", stats: { power: 8, speed: 7, defense: 6 } },
-  { id: "c5", name: "Blaze", stats: { power: 10, speed: 5, defense: 5 } },
-  { id: "c6", name: "Storm", stats: { power: 6, speed: 9, defense: 7 } },
-  { id: "c7", name: "Nova", stats: { power: 7, speed: 7, defense: 7 } },
-  { id: "c8", name: "Talon", stats: { power: 8, speed: 6, defense: 8 } },
-  { id: "c9", name: "Vortex", stats: { power: 4, speed: 8, defense: 9 } },
-  { id: "c10", name: "Phantom", stats: { power: 9, speed: 9, defense: 2 } },
+  { id: "IRIS",   name: "Iris",   stats: { power: 6, intelligence: 9, defense: 6, health: 7, refresh: 8 } },
+  { id: "ZEPHYR", name: "Zephyr", stats: { power: 7, intelligence: 7, defense: 5, health: 6, refresh: 9 } },
+  { id: "WENDY",  name: "Wendy",  stats: { power: 5, intelligence: 8, defense: 8, health: 8, refresh: 6 } },
+  { id: "SKYE",   name: "Skye",   stats: { power: 8, intelligence: 6, defense: 4, health: 5, refresh: 7 } },
+  { id: "SUNNY",  name: "Sunny",  stats: { power: 6, intelligence: 7, defense: 7, health: 9, refresh: 7 } },
+  { id: "AURA",   name: "Aura",   stats: { power: 7, intelligence: 8, defense: 6, health: 7, refresh: 6 } },
+  { id: "NEIL",   name: "Neil",   stats: { power: 9, intelligence: 5, defense: 5, health: 6, refresh: 5 } },
+  { id: "GALE",   name: "Gale",   stats: { power: 8, intelligence: 6, defense: 7, health: 7, refresh: 6 } },
+  { id: "THORA",  name: "Thora",  stats: { power: 9, intelligence: 4, defense: 9, health: 9, refresh: 3 } },
+  { id: "VEGA",   name: "Vega",   stats: { power: 10, intelligence: 8, defense: 9, health: 10, refresh: 5 } },
 ];

@@ -6,6 +6,7 @@ import {
   HOME_BG_KEY,
 } from "../GameRenderer.constants";
 import { createBitmapText } from "../utils/text/createBitmapText";
+import { fadeToScene } from "../utils/scene/fadeToScene";
 import { createButton } from "../utils/widgets/createButton";
 import {
   CHARACTER_SELECT_SCENE_KEY,
@@ -19,6 +20,7 @@ export class StartScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.cameras.main.fadeIn(400, 0, 0, 0);
     this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, HOME_BG_KEY);
 
     createBitmapText(this, GAME_WIDTH / 2, 55, "Flight and Fight", 20);
@@ -34,7 +36,7 @@ export class StartScene extends Phaser.Scene {
         fill: GAME_PALETTE.ROSE,
         fontSize: 12,
         onClick: () =>
-          this.scene.start(CHARACTER_SELECT_SCENE_KEY, { mode: "single" }),
+          fadeToScene(this, CHARACTER_SELECT_SCENE_KEY, { mode: "single" }),
       },
     );
 
@@ -44,7 +46,7 @@ export class StartScene extends Phaser.Scene {
       fill: GAME_PALETTE.ROSE,
       fontSize: 12,
       onClick: () =>
-        this.scene.start(CONNECT_SCENE_KEY, { mode: "multiplayer" }),
+        fadeToScene(this, CONNECT_SCENE_KEY, { mode: "multiplayer" }),
     });
   }
 }

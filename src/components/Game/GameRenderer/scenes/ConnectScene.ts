@@ -12,6 +12,7 @@ import type {
   GameMode,
   SessionInfo,
 } from "../GameRenderer.types";
+import { fadeToScene } from "../utils/scene/fadeToScene";
 import { createBitmapText } from "../utils/text/createBitmapText";
 import { type Debounced, debounce } from "../utils/timing/debounce";
 import { createButton } from "../utils/widgets/createButton";
@@ -74,6 +75,7 @@ export class ConnectScene extends Phaser.Scene {
   }
 
   create(data: ConnectSceneData): void {
+    this.cameras.main.fadeIn(400, 0, 0, 0);
     this.mode = data.mode;
     this.resolved = false;
     this.sessionId = undefined;
@@ -123,7 +125,7 @@ export class ConnectScene extends Phaser.Scene {
     createButton(this, LEFT_CX, BOTTOM_Y, "Leave", {
       width: 100,
       fill: GAME_PALETTE.ORCHID,
-      onClick: () => this.scene.start(START_SCENE_KEY),
+      onClick: () => fadeToScene(this, START_SCENE_KEY),
     });
 
     // --- SHARE (right) ---
@@ -290,7 +292,7 @@ export class ConnectScene extends Phaser.Scene {
       return;
     }
     this.resolved = true;
-    this.scene.start(CHARACTER_SELECT_SCENE_KEY, {
+    fadeToScene(this, CHARACTER_SELECT_SCENE_KEY, {
       mode: this.mode,
       session,
     });

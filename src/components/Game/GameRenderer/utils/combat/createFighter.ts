@@ -1,15 +1,15 @@
 import type { Fighter, GameCharacter } from "../../GameRenderer.types";
 
-// A fighter's health pool is derived from its defense stat, so sturdier
-// characters take more hits to drop. Tuned so a typical character (defense 5)
-// has 70 HP and survives ~3 average hits — long enough for stats to matter,
-// short enough that a 5v5 resolves in a couple of minutes.
-const BASE_HEALTH = 40;
-const HEALTH_PER_DEFENSE = 6;
+// A fighter's health pool scales from the character's health stat (1–10).
+// Tuned so health=5 yields 70 HP (survives ~3 average hits) and health=10
+// reaches 100 HP — long enough for stats to matter, short enough that a 5v5
+// resolves in a couple of minutes.
+const BASE_HEALTH = 20;
+const HEALTH_PER_STAT = 8;
 
 /** Derive the full health pool a character starts a fight with. */
 export const maxHealthFor = (character: GameCharacter): number =>
-  BASE_HEALTH + character.stats.defense * HEALTH_PER_DEFENSE;
+  BASE_HEALTH + character.stats.health * HEALTH_PER_STAT;
 
 /** Instantiate a combat-ready fighter from a roster character, at full health. */
 export const createFighter = (character: GameCharacter): Fighter => {

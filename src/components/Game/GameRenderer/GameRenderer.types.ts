@@ -1,9 +1,11 @@
 export type GameMode = "single" | "multiplayer";
 
 export interface CharacterStats {
-  power: number;
-  speed: number;
+  intelligence: number;
   defense: number;
+  power: number;
+  health: number;
+  refresh: number;
 }
 
 export interface GameCharacter {
