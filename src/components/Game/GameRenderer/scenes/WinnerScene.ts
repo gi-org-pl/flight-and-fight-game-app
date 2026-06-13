@@ -5,8 +5,8 @@ import {
   GAME_WIDTH,
 } from "../GameRenderer.constants";
 import type { WinnerSceneData } from "../GameRenderer.types";
-import { createBitmapText } from "../utils/createBitmapText";
-import { createButton } from "../utils/createButton";
+import { createBitmapText } from "../utils/text/createBitmapText";
+import { createButton } from "../utils/widgets/createButton";
 import { START_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
 
 export class WinnerScene extends Phaser.Scene {

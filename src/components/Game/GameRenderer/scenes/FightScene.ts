@@ -5,9 +5,9 @@ import {
   GAME_WIDTH,
 } from "../GameRenderer.constants";
 import type { FightSceneData } from "../GameRenderer.types";
-import { createBitmapText } from "../utils/createBitmapText";
-import { createButton } from "../utils/createButton";
-import { createPanel } from "../utils/createPanel";
+import { createBitmapText } from "../utils/text/createBitmapText";
+import { createButton } from "../utils/widgets/createButton";
+import { createPanel } from "../utils/widgets/createPanel";
 import { FIGHT_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
 
 const FIGHTER_WIDTH = 60;

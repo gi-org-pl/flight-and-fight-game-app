@@ -1,5 +1,8 @@
 import type Phaser from "phaser";
-import { GAME_BITMAP_FONT, TEXT_COLOR_NUMBER } from "../GameRenderer.constants";
+import {
+  GAME_BITMAP_FONT,
+  TEXT_COLOR_NUMBER,
+} from "../../GameRenderer.constants";
 
 // Center-anchored `BitmapText` in the baked Press Start 2P font. Drop-in
 // replacement for `scene.add.text(...).setOrigin(0.5)`, but crisp under the

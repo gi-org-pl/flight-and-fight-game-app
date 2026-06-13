@@ -4,13 +4,13 @@ import {
   BACKGROUND_COLOR,
   GAME_HEIGHT,
   GAME_WIDTH,
-} from "../GameRenderer.constants";
-import { BootScene } from "../scenes/BootScene";
-import { CharacterSelectScene } from "../scenes/CharacterSelectScene";
-import { FightScene } from "../scenes/FightScene";
-import { MatchmakingScene } from "../scenes/MatchmakingScene";
-import { StartScene } from "../scenes/StartScene";
-import { WinnerScene } from "../scenes/WinnerScene";
+} from "../../GameRenderer.constants";
+import { BootScene } from "../../scenes/BootScene";
+import { CharacterSelectScene } from "../../scenes/CharacterSelectScene";
+import { FightScene } from "../../scenes/FightScene";
+import { MatchmakingScene } from "../../scenes/MatchmakingScene";
+import { StartScene } from "../../scenes/StartScene";
+import { WinnerScene } from "../../scenes/WinnerScene";
 import { createGameConfig } from "./createGameConfig";
 
 describe("createGameConfig", () => {

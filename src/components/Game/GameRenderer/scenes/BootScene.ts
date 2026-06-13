@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { GAME_FONT } from "../GameRenderer.constants";
-import { generateBitmapFont } from "../utils/generateBitmapFont";
+import { generateBitmapFont } from "../utils/text/generateBitmapFont";
 import { BOOT_SCENE_KEY, START_SCENE_KEY } from "./sceneKeys";
 
 export class BootScene extends Phaser.Scene {

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { GAME_BITMAP_FONT, GAME_FONT } from "../GameRenderer.constants";
+import { GAME_BITMAP_FONT, GAME_FONT } from "../../GameRenderer.constants";
 
 // Native pixel size each glyph is rasterized at. The 480x270 buffer is upscaled
 // ~4-5x by the browser with nearest-neighbor (pixelArt), so what the atlas must

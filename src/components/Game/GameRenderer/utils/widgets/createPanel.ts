@@ -1,6 +1,6 @@
 import Phaser from "phaser";
-import { BEVEL } from "../GameRenderer.constants";
-import { darkenColor } from "./darkenColor";
+import { BEVEL } from "../../GameRenderer.constants";
+import { darkenColor } from "../color/darkenColor";
 
 export interface PanelOptions {
   shadow?: number;

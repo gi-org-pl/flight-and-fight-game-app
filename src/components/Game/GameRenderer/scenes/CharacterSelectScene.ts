@@ -11,10 +11,11 @@ import type {
   CharacterSelectSceneData,
   GameCharacter,
 } from "../GameRenderer.types";
-import { createBitmapText } from "../utils/createBitmapText";
-import { createButton } from "../utils/createButton";
-import { createPanel } from "../utils/createPanel";
-import { toggleSelection } from "../utils/toggleSelection";
+import { darkenColor } from "../utils/color/darkenColor";
+import { toggleSelection } from "../utils/selection/toggleSelection";
+import { createBitmapText } from "../utils/text/createBitmapText";
+import { createButton } from "../utils/widgets/createButton";
+import { createPanel } from "../utils/widgets/createPanel";
 import {
   CHARACTER_SELECT_SCENE_KEY,
   FIGHT_SCENE_KEY,
@@ -35,10 +36,17 @@ const COLUMNS = 5;
 const CELL_WIDTH = 56;
 const CELL_HEIGHT = 58;
 const AVATAR_SIZE = 36;
+const AVATAR_OFFSET_Y = -7;
+const NAME_OFFSET_Y = 21;
 const GRID_GAP_X = 3;
 const GRID_GAP_Y = 14;
 const GRID_LEFT = 12;
 const AVATAR_COLOR = 0x00_00_00;
+// Order badge: a small filled square in the card's top-left corner with the
+// pick number on it, so the digit reads against the dark avatar instead of
+// vanishing into it.
+const BADGE_SIZE = 16;
+const BADGE_INSET = 3;
 
 // --- Info panel (right) -----------------------------------------------------
 const INFO_X = 394;
@@ -46,11 +54,15 @@ const INFO_TOP = 46;
 const INFO_WIDTH = 150;
 const INFO_HEIGHT = 168;
 const INFO_AVATAR_SIZE = 44;
-const STAT_BAR_LEFT = 356;
-const STAT_BAR_MAX_WIDTH = 84;
+// Stat rows: label (left) — bar — value (right), the whole block symmetric
+// about INFO_X so the panel padding matches on both sides.
+const STAT_LABEL_X = 346;
+const STAT_VALUE_X = 446;
+const STAT_BAR_LEFT = 364;
+const STAT_BAR_MAX_WIDTH = 68;
 const STAT_BAR_HEIGHT = 8;
 const STAT_ROW_GAP = 18;
-const STAT_FIRST_ROW_Y = 168;
+const STAT_FIRST_ROW_Y = 164;
 
 // Two grid rows, vertically centered against the info panel so the columns and
 // the card line up along the same band.
@@ -71,6 +83,7 @@ const OPPONENT_SELECT_DELAY_MS = 2500;
 interface CardView {
   background: Phaser.GameObjects.Rectangle;
   avatar: Phaser.GameObjects.Rectangle;
+  badge: Phaser.GameObjects.Rectangle;
   order: Phaser.GameObjects.BitmapText;
 }
 
@@ -152,18 +165,30 @@ export class CharacterSelectScene extends Phaser.Scene {
       // Black square placeholder standing in for the character avatar.
       const avatar = this.add.rectangle(
         x,
-        y - 10,
+        y + AVATAR_OFFSET_Y,
         AVATAR_SIZE,
         AVATAR_SIZE,
         AVATAR_COLOR,
       );
-      createBitmapText(this, x, y + 21, character.name, FONT_BODY);
+      createBitmapText(this, x, y + NAME_OFFSET_Y, character.name, FONT_BODY);
 
-      // Selection-order badge, hidden until the card is picked.
+      // Selection-order badge: a filled corner square plus the pick number,
+      // drawn over the avatar and hidden until the card is picked.
+      const badgeX = x - CELL_WIDTH / 2 + BADGE_INSET + BADGE_SIZE / 2;
+      const badgeY = y - CELL_HEIGHT / 2 + BADGE_INSET + BADGE_SIZE / 2;
+      const badge = this.add
+        .rectangle(
+          badgeX,
+          badgeY,
+          BADGE_SIZE,
+          BADGE_SIZE,
+          darkenColor(GAME_PALETTE.ROSE),
+        )
+        .setVisible(false);
       const order = createBitmapText(
         this,
-        x - CELL_WIDTH / 2 + 8,
-        y - CELL_HEIGHT / 2 + 8,
+        badgeX,
+        badgeY,
         "",
         FONT_BODY,
       ).setVisible(false);
@@ -171,7 +196,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       background.on("pointerover", () => this.updateInfo(character));
       background.on("pointerup", () => this.toggle(character));
 
-      this.cards.set(character.id, { background, avatar, order });
+      this.cards.set(character.id, { background, avatar, badge, order });
     });
   }
 
@@ -185,7 +210,13 @@ export class CharacterSelectScene extends Phaser.Scene {
       INFO_HEIGHT,
       GAME_PALETTE.ORCHID,
     );
-    createBitmapText(this, INFO_X, INFO_TOP + 18, "FIGHTER", FONT_HEADER);
+    createBitmapText(
+      this,
+      INFO_X,
+      INFO_TOP + 14,
+      "FIGHTER",
+      FONT_BODY,
+    ).setAlpha(0.5);
 
     const placeholder = createBitmapText(
       this,
@@ -199,7 +230,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const avatar = this.add
       .rectangle(
         INFO_X,
-        INFO_TOP + 60,
+        INFO_TOP + 52,
         INFO_AVATAR_SIZE,
         INFO_AVATAR_SIZE,
         AVATAR_COLOR,
@@ -208,7 +239,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const name = createBitmapText(
       this,
       INFO_X,
-      INFO_TOP + 100,
+      INFO_TOP + 92,
       "",
       FONT_HEADER,
     ).setVisible(false);
@@ -217,7 +248,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const values: Phaser.GameObjects.BitmapText[] = [];
     STAT_LABELS.forEach(({ label }, index) => {
       const rowY = STAT_FIRST_ROW_Y + index * STAT_ROW_GAP;
-      createBitmapText(this, STAT_BAR_LEFT - 22, rowY, label, FONT_BODY);
+      createBitmapText(this, STAT_LABEL_X, rowY, label, FONT_BODY);
       // Track sits behind the fill so empty stat space stays visible.
       this.add.rectangle(
         STAT_BAR_LEFT + STAT_BAR_MAX_WIDTH / 2,
@@ -232,7 +263,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         .setVisible(false);
       const value = createBitmapText(
         this,
-        STAT_BAR_LEFT + STAT_BAR_MAX_WIDTH + 8,
+        STAT_VALUE_X,
         rowY,
         "",
         FONT_BODY,
@@ -245,30 +276,28 @@ export class CharacterSelectScene extends Phaser.Scene {
   }
 
   private buildControls(): void {
+    const rowY = GAME_HEIGHT - 22;
+
+    // Status sits on the left; the actions group to the right so the bottom
+    // strip reads "info | actions" and has room to breathe.
     this.status = createBitmapText(
       this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 46,
+      GRID_LEFT,
+      rowY,
       "",
       FONT_BODY,
-    );
+    ).setOrigin(0, 0.5);
 
-    createButton(this, 110, GAME_HEIGHT - 20, "Leave", {
-      width: 120,
+    createButton(this, 260, rowY, "Leave", {
+      width: 84,
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });
-    this.flightButton = createButton(
-      this,
-      330,
-      GAME_HEIGHT - 20,
-      "Flight or Fight",
-      {
-        width: 200,
-        fill: GAME_PALETTE.ROSE,
-        onClick: () => this.confirm(),
-      },
-    );
+    this.flightButton = createButton(this, 388, rowY, "Flight or Fight", {
+      width: 160,
+      fill: GAME_PALETTE.ROSE,
+      onClick: () => this.confirm(),
+    });
   }
 
   private toggle(character: GameCharacter): void {
@@ -309,6 +338,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         isSelected ? GAME_PALETTE.ROSE : GAME_PALETTE.LAVENDER,
       );
       card.avatar.setStrokeStyle(isSelected ? 2 : 0, GAME_PALETTE.BLUSH);
+      card.badge.setVisible(isSelected);
       card.order.setVisible(isSelected).setText(`${position + 1}`);
     });
 
@@ -319,7 +349,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const ready = this.selected.length === MAX_ROSTER;
 
     if (this.awaitingOpponent) {
-      this.status?.setText("Waiting for the other player...");
+      this.status?.setText("Waiting for opponent...");
       this.flightButton?.setAlpha(0.4);
       return;
     }

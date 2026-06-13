@@ -1,6 +1,6 @@
 import { COLORS } from "@/constants/common";
 import type { GameCharacter } from "./GameRenderer.types";
-import { toColorNumber } from "./utils/toColorNumber";
+import { toColorNumber } from "./utils/color/toColorNumber";
 
 // Low base resolution rendered with pixelArt + Scale.FIT: the 960x540 host
 // container scales this up 2x, giving chunkier text and crisp pixel doubling.

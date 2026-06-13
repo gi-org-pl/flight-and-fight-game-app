@@ -1,7 +1,7 @@
 import Phaser from "phaser";
-import { BEVEL, GAME_PALETTE } from "../GameRenderer.constants";
-import { createBitmapText } from "./createBitmapText";
-import { darkenColor } from "./darkenColor";
+import { BEVEL, GAME_PALETTE } from "../../GameRenderer.constants";
+import { darkenColor } from "../color/darkenColor";
+import { createBitmapText } from "../text/createBitmapText";
 
 export interface ButtonOptions {
   width?: number;

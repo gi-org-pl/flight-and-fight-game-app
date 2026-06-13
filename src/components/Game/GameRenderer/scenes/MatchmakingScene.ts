@@ -5,8 +5,8 @@ import {
   GAME_WIDTH,
 } from "../GameRenderer.constants";
 import type { MatchmakingSceneData } from "../GameRenderer.types";
-import { createBitmapText } from "../utils/createBitmapText";
-import { createButton } from "../utils/createButton";
+import { createBitmapText } from "../utils/text/createBitmapText";
+import { createButton } from "../utils/widgets/createButton";
 import {
   CHARACTER_SELECT_SCENE_KEY,
   MATCHMAKING_SCENE_KEY,
