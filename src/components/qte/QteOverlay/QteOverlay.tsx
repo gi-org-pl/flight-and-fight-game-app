@@ -21,9 +21,13 @@ const DIFFICULTY_LABEL: Record<number, string> = {
 const QteOverlay = ({ definition, onClose }: QteOverlayProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-periwinkle/90">
-      <div className="nes-container with-title is-dark animate-qte-enter" style={{ minWidth: 360 }}>
+      <div
+        className="nes-container with-title is-dark animate-qte-enter"
+        style={{ minWidth: 360 }}
+      >
         <p className="title">
-          {ROLE_LABEL[definition.role]} — LVL {DIFFICULTY_LABEL[definition.difficulty]}
+          {ROLE_LABEL[definition.role]} — LVL{" "}
+          {DIFFICULTY_LABEL[definition.difficulty]}
         </p>
         {definition.type === "mash" && (
           <MashQte definition={definition} onComplete={onClose} />

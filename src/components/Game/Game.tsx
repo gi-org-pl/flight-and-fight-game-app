@@ -34,10 +34,7 @@ const Game = () => {
         </div>
       </div>
       {activeQte && (
-        <QteOverlay
-          definition={activeQte}
-          onClose={() => setActiveQte(null)}
-        />
+        <QteOverlay definition={activeQte} onClose={() => setActiveQte(null)} />
       )}
     </div>
   );

@@ -1,4 +1,10 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceQteDefinition } from "@/types/qte";
 import SequenceQte from "./SequenceQte";
@@ -43,7 +49,9 @@ describe("<SequenceQte />", () => {
       pressSymbol("↑");
       pressSymbol("→");
       pressSymbol("↓");
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(1);
     });
@@ -65,7 +73,9 @@ describe("<SequenceQte />", () => {
       render(<SequenceQte definition={definition} onComplete={onComplete} />);
 
       pressSymbol("↓");
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(0);
     });
@@ -86,8 +96,12 @@ describe("<SequenceQte />", () => {
 
       pressSymbol("↑");
 
-      act(() => { vi.advanceTimersByTime(3100); });
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(3100);
+      });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(1 / 3);
     });
@@ -98,8 +112,12 @@ describe("<SequenceQte />", () => {
       const onComplete = vi.fn();
       render(<SequenceQte definition={definition} onComplete={onComplete} />);
 
-      act(() => { vi.advanceTimersByTime(3100); });
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(3100);
+      });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(0);
     });

@@ -270,7 +270,11 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     role: "defender",
     title: "Pattern Memory",
     difficulty: 2,
-    params: { sequence: ["↑", "→", "↓"], memorizeMs: 2500, inputDurationMs: 6000 },
+    params: {
+      sequence: ["↑", "→", "↓"],
+      memorizeMs: 2500,
+      inputDurationMs: 6000,
+    },
   },
   {
     id: "qte-recall-battle-recall",
@@ -278,7 +282,11 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     role: "defender",
     title: "Battle Recall",
     difficulty: 3,
-    params: { sequence: ["←", "↑", "→", "↓"], memorizeMs: 2000, inputDurationMs: 5000 },
+    params: {
+      sequence: ["←", "↑", "→", "↓"],
+      memorizeMs: 2000,
+      inputDurationMs: 5000,
+    },
   },
   {
     id: "qte-recall-flash-memory",

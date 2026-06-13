@@ -48,7 +48,10 @@ const TriviaQte = ({ definition, onComplete }: TriviaQteProps) => {
     return (
       <QteResultDisplay quality={quality}>
         <p>{quality === 1 ? "Correct!" : "Wrong..."}</p>
-        <p>{OPTION_LABELS[params.correctIndex]}. {params.options[params.correctIndex]}</p>
+        <p>
+          {OPTION_LABELS[params.correctIndex]}.{" "}
+          {params.options[params.correctIndex]}
+        </p>
       </QteResultDisplay>
     );
   }

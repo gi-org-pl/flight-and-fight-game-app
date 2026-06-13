@@ -66,8 +66,7 @@ const TimingQte = ({ definition, onComplete }: TimingQteProps) => {
     const zoneCenter = params.zoneCenterPercent / 100;
     const zoneHalf = params.zoneWidthPercent / 100 / 2;
     const distance = Math.abs(pos - zoneCenter);
-    const q =
-      distance <= zoneHalf ? Math.max(0, 1 - distance / zoneHalf) : 0;
+    const q = distance <= zoneHalf ? Math.max(0, 1 - distance / zoneHalf) : 0;
 
     setQuality(q);
     setPhase("result");

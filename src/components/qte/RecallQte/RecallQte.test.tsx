@@ -1,4 +1,10 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { RecallQteDefinition } from "@/types/qte";
 import RecallQte from "./RecallQte";
@@ -42,9 +48,7 @@ describe("<RecallQte />", () => {
     it("does not show input buttons during memorize", () => {
       render(<RecallQte definition={definition} onComplete={vi.fn()} />);
 
-      expect(
-        screen.queryByRole("button", { name: /Press ↑/i }),
-      ).toBeNull();
+      expect(screen.queryByRole("button", { name: /Press ↑/i })).toBeNull();
     });
   });
 
@@ -56,7 +60,9 @@ describe("<RecallQte />", () => {
         vi.advanceTimersByTime(2100);
       });
 
-      expect(screen.getByText("Reproduce the sequence from memory!")).toBeDefined();
+      expect(
+        screen.getByText("Reproduce the sequence from memory!"),
+      ).toBeDefined();
       expect(screen.getByRole("button", { name: "Press ↑" })).toBeDefined();
     });
   });
@@ -66,13 +72,17 @@ describe("<RecallQte />", () => {
       const onComplete = vi.fn();
       render(<RecallQte definition={definition} onComplete={onComplete} />);
 
-      act(() => { vi.advanceTimersByTime(2100); });
+      act(() => {
+        vi.advanceTimersByTime(2100);
+      });
 
       pressSymbol("↑");
       pressSymbol("→");
       pressSymbol("↓");
 
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(1);
     });
@@ -83,11 +93,15 @@ describe("<RecallQte />", () => {
       const onComplete = vi.fn();
       render(<RecallQte definition={definition} onComplete={onComplete} />);
 
-      act(() => { vi.advanceTimersByTime(2100); });
+      act(() => {
+        vi.advanceTimersByTime(2100);
+      });
 
       pressSymbol("↓");
 
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(0);
     });
@@ -98,12 +112,18 @@ describe("<RecallQte />", () => {
       const onComplete = vi.fn();
       render(<RecallQte definition={definition} onComplete={onComplete} />);
 
-      act(() => { vi.advanceTimersByTime(2100); });
+      act(() => {
+        vi.advanceTimersByTime(2100);
+      });
 
       pressSymbol("↑");
 
-      act(() => { vi.advanceTimersByTime(5100); });
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(5100);
+      });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(1 / 3);
     });

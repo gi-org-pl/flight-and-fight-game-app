@@ -1,4 +1,10 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MashQteDefinition } from "@/types/qte";
 import MashQte from "./MashQte";
@@ -53,7 +59,9 @@ describe("<MashQte />", () => {
     it("shows the result screen", () => {
       render(<MashQte definition={definition} onComplete={vi.fn()} />);
 
-      act(() => { vi.advanceTimersByTime(2100); });
+      act(() => {
+        vi.advanceTimersByTime(2100);
+      });
 
       expect(screen.queryByRole("button", { name: /mash/i })).toBeNull();
     });
@@ -65,8 +73,12 @@ describe("<MashQte />", () => {
       const button = screen.getByRole("button", { name: /mash/i });
       for (let i = 0; i < 5; i++) fireEvent.click(button);
 
-      act(() => { vi.advanceTimersByTime(2100); });
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(2100);
+      });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(0.5);
     });
@@ -78,8 +90,12 @@ describe("<MashQte />", () => {
       const button = screen.getByRole("button", { name: /mash/i });
       for (let i = 0; i < 20; i++) fireEvent.click(button);
 
-      act(() => { vi.advanceTimersByTime(2100); });
-      act(() => { vi.advanceTimersByTime(1500); });
+      act(() => {
+        vi.advanceTimersByTime(2100);
+      });
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
 
       expect(onComplete).toHaveBeenCalledWith(1);
     });
@@ -89,7 +105,9 @@ describe("<MashQte />", () => {
     it("ignores further button presses", () => {
       render(<MashQte definition={definition} onComplete={vi.fn()} />);
 
-      act(() => { vi.advanceTimersByTime(2100); });
+      act(() => {
+        vi.advanceTimersByTime(2100);
+      });
 
       expect(screen.queryByRole("button", { name: /mash/i })).toBeNull();
     });

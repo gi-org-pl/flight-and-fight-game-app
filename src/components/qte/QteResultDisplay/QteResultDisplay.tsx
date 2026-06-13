@@ -14,7 +14,9 @@ const QteResultDisplay = ({ quality, children }: QteResultDisplayProps) => {
   return (
     <div className="flex flex-col items-center gap-4 p-4">
       <p className={`text-2xl ${colorClass} ${labelAnim}`}>{label}</p>
-      <div className="animate-qte-fade-up text-white text-center">{children}</div>
+      <div className="animate-qte-fade-up text-white text-center">
+        {children}
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 import {
   CHARACTERS,
   GAME_HEIGHT,
@@ -6,23 +6,23 @@ import {
   GAME_WIDTH,
   MAX_ROSTER,
   MAX_STAT,
-} from '../GameRenderer.constants';
+} from "../GameRenderer.constants";
 import type {
   CharacterSelectSceneData,
   GameCharacter,
   SessionInfo,
-} from '../GameRenderer.types';
-import { avatarTextureKey } from '../utils/avatar/generateAvatar';
-import { darkenColor } from '../utils/color/darkenColor';
-import { toggleSelection } from '../utils/selection/toggleSelection';
-import { createBitmapText } from '../utils/text/createBitmapText';
-import { createButton } from '../utils/widgets/createButton';
-import { createPanel } from '../utils/widgets/createPanel';
+} from "../GameRenderer.types";
+import { avatarTextureKey } from "../utils/avatar/generateAvatar";
+import { darkenColor } from "../utils/color/darkenColor";
+import { toggleSelection } from "../utils/selection/toggleSelection";
+import { createBitmapText } from "../utils/text/createBitmapText";
+import { createButton } from "../utils/widgets/createButton";
+import { createPanel } from "../utils/widgets/createPanel";
 import {
   CHARACTER_SELECT_SCENE_KEY,
   FIGHT_SCENE_KEY,
   START_SCENE_KEY,
-} from './sceneKeys';
+} from "./sceneKeys";
 
 // The bitmap font is baked at 16px (NATIVE_PX) from Press Start 2P — itself an
 // 8px-grid face. Only 16 and 8 land on a clean integer downscale of the atlas;
@@ -71,10 +71,10 @@ const GRID_BLOCK_HEIGHT = 2 * CELL_HEIGHT + GRID_GAP_Y;
 const GRID_TOP =
   INFO_TOP + (INFO_HEIGHT - GRID_BLOCK_HEIGHT) / 2 + CELL_HEIGHT / 2;
 
-const STAT_LABELS: { key: keyof GameCharacter['stats']; label: string }[] = [
-  { key: 'power', label: 'PWR' },
-  { key: 'speed', label: 'SPD' },
-  { key: 'defense', label: 'DEF' },
+const STAT_LABELS: { key: keyof GameCharacter["stats"]; label: string }[] = [
+  { key: "power", label: "PWR" },
+  { key: "speed", label: "SPD" },
+  { key: "defense", label: "DEF" },
 ];
 
 // Mocked latency before the (fake) opponent locks in their roster. The waiting
@@ -97,7 +97,7 @@ interface InfoView {
 }
 
 export class CharacterSelectScene extends Phaser.Scene {
-  private mode: CharacterSelectSceneData['mode'] = 'single';
+  private mode: CharacterSelectSceneData["mode"] = "single";
   private session?: SessionInfo;
   private selected: string[] = [];
   private opponentReady = true;
@@ -117,7 +117,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.selected = [];
     this.awaitingOpponent = false;
     // Single-player has no opponent to wait on, so it starts ready.
-    this.opponentReady = data.mode === 'single';
+    this.opponentReady = data.mode === "single";
     this.cards = new Map();
 
     createBitmapText(
@@ -131,7 +131,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       36,
-      'Pick order sets your fight sequence',
+      "Pick order sets your fight sequence",
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     );
@@ -140,7 +140,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.buildInfoPanel();
     this.buildControls();
 
-    if (this.mode === 'multiplayer') {
+    if (this.mode === "multiplayer") {
       this.time.delayedCall(OPPONENT_SELECT_DELAY_MS, () =>
         this.onOpponentReady(),
       );
@@ -188,12 +188,12 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         badgeX,
         badgeY,
-        '',
+        "",
         FONT_BODY,
       ).setVisible(false);
 
-      background.on('pointerover', () => this.updateInfo(character));
-      background.on('pointerup', () => this.toggle(character));
+      background.on("pointerover", () => this.updateInfo(character));
+      background.on("pointerup", () => this.toggle(character));
 
       this.cards.set(character.id, { background, avatar, badge, order });
     });
@@ -213,7 +213,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       INFO_TOP + 14,
-      'FIGHTER',
+      "FIGHTER",
       FONT_BODY,
     ).setAlpha(0.5);
 
@@ -221,20 +221,20 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       centerY,
-      'Hover a fighter',
+      "Hover a fighter",
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     );
 
     const avatar = this.add
-      .image(INFO_X, INFO_TOP + 52, '')
+      .image(INFO_X, INFO_TOP + 52, "")
       .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(false);
     const name = createBitmapText(
       this,
       INFO_X,
       INFO_TOP + 92,
-      '',
+      "",
       FONT_HEADER,
     ).setVisible(false);
 
@@ -259,7 +259,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         STAT_VALUE_X,
         rowY,
-        '',
+        "",
         FONT_BODY,
       ).setVisible(false);
       bars.push(fill);
@@ -274,18 +274,18 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     // Status sits on the left; the actions group to the right so the bottom
     // strip reads "info | actions" and has room to breathe.
-    createButton(this, GRID_LEFT + 42, rowY, 'Leave', {
+    createButton(this, GRID_LEFT + 42, rowY, "Leave", {
       width: 84,
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });
 
-    this.status = createBitmapText(this, 206, rowY, '', FONT_BODY).setOrigin(
+    this.status = createBitmapText(this, 206, rowY, "", FONT_BODY).setOrigin(
       0.5,
       0.5,
     );
 
-    this.flightButton = createButton(this, 388, rowY, 'Flight or Fight', {
+    this.flightButton = createButton(this, 388, rowY, "Flight or Fight", {
       width: 160,
       fill: GAME_PALETTE.ROSE,
       onClick: () => this.confirm(),
@@ -343,14 +343,14 @@ export class CharacterSelectScene extends Phaser.Scene {
     const ready = this.selected.length === MAX_ROSTER;
 
     if (this.awaitingOpponent) {
-      this.status?.setText('Waiting for opponent...');
+      this.status?.setText("Waiting for opponent...");
       this.flightButton?.setAlpha(0.4);
       return;
     }
 
     this.status?.setText(
       ready
-        ? 'Roster locked!'
+        ? "Roster locked!"
         : `Selected ${this.selected.length}/${MAX_ROSTER}`,
     );
     this.flightButton?.setAlpha(ready ? 1 : 0.4);
