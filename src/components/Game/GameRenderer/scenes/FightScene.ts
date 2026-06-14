@@ -837,7 +837,10 @@ export class FightScene extends Phaser.Scene {
           playSuperpowerSound(this);
           playHealthDownSound(this);
           const base = computeDamage(attacker, defender);
-          const superDamage = Math.max(5, Math.round(base * (1 + quality * 1.5)));
+          const superDamage = Math.max(
+            5,
+            Math.round(base * (1 + quality * 1.5)),
+          );
           defender.health = Math.max(0, defender.health - superDamage);
           this.refresh();
           this.showToast(
@@ -1742,7 +1745,9 @@ export class FightScene extends Phaser.Scene {
         if (playerFighter) {
           const delta = playerFighter.health - char.stats.health;
           if (delta > 0) {
-            this.showToast(`[♥] ${playerFighter.name} -${Math.round(delta)} HP`);
+            this.showToast(
+              `[♥] ${playerFighter.name} -${Math.round(delta)} HP`,
+            );
           }
           playerFighter.health = char.stats.health;
         }

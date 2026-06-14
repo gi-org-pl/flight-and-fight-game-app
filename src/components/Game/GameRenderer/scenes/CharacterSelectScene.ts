@@ -10,6 +10,7 @@ import {
   GAME_WIDTH,
   MAX_ROSTER,
   MAX_STAT,
+  MUSIC_KEY_LOBBY,
   TEXT_COLOR_NUMBER,
 } from "../GameRenderer.constants";
 import type {
@@ -23,10 +24,9 @@ import {
 import { toDisplayName } from "../utils/character/toDisplayName";
 import { darkenColor } from "../utils/color/darkenColor";
 import { toggleSelection } from "../utils/selection/toggleSelection";
-import { createBitmapText } from "../utils/text/createBitmapText";
-import { MUSIC_KEY_LOBBY } from "../GameRenderer.constants";
-import { playCharacterSelectSound } from "../utils/sound/playCharacterSelectSound";
 import { playMusic } from "../utils/sound/musicManager";
+import { playCharacterSelectSound } from "../utils/sound/playCharacterSelectSound";
+import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
 import { createPanel } from "../utils/widgets/createPanel";
 import {

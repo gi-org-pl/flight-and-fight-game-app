@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 
 const FADE_IN_MS = 1500;
 const FADE_OUT_MS = 800;
@@ -17,7 +17,7 @@ export const playMusic = (scene: Phaser.Scene, key: string): void => {
       targets: outgoing,
       volume: 0,
       duration: FADE_OUT_MS,
-      ease: 'Linear',
+      ease: "Linear",
       onComplete: () => {
         outgoing.stop();
         outgoing.destroy();
@@ -35,7 +35,7 @@ export const playMusic = (scene: Phaser.Scene, key: string): void => {
     targets: track,
     volume: MUSIC_VOLUME,
     duration: FADE_IN_MS,
-    ease: 'Linear',
+    ease: "Linear",
   });
 
   current = track;
@@ -53,7 +53,7 @@ export const stopMusic = (scene: Phaser.Scene): void => {
     targets: outgoing,
     volume: 0,
     duration: FADE_OUT_MS,
-    ease: 'Linear',
+    ease: "Linear",
     onComplete: () => {
       outgoing.stop();
       outgoing.destroy();

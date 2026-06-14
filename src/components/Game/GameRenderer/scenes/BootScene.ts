@@ -3,8 +3,8 @@ import homeBgLayer1 from "@/assets/images/home/layer-1.png?url";
 import homeBgLayer2 from "@/assets/images/home/layer-2.png?url";
 import homeBgLayer3 from "@/assets/images/home/layer-3.png?url";
 import homeBgLayer4 from "@/assets/images/home/layer-4.png?url";
-import lobbyMp3 from "@/assets/sounds/lobby.mp3?url";
 import fightMp3 from "@/assets/sounds/fight.mp3?url";
+import lobbyMp3 from "@/assets/sounds/lobby.mp3?url";
 import { getCharacters } from "@/services/api/characters";
 import {
   GAME_FONT,

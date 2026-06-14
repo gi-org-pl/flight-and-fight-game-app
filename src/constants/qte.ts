@@ -143,7 +143,12 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 2,
     params: {
       question: "Create & switch branch?",
-      options: ["git branch x", "git checkout -b x", "git switch x", "git new x"],
+      options: [
+        "git branch x",
+        "git checkout -b x",
+        "git switch x",
+        "git new x",
+      ],
       correctIndex: 1,
       durationMs: 4000,
     },
@@ -195,7 +200,12 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 2,
     params: {
       question: "'S' in SOLID?",
-      options: ["Substitution", "Single Responsibility", "Separation", "Static"],
+      options: [
+        "Substitution",
+        "Single Responsibility",
+        "Separation",
+        "Static",
+      ],
       correctIndex: 1,
       durationMs: 4000,
     },
@@ -260,7 +270,12 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 4,
     params: {
       question: "CAP = Consistency + Availability + ?",
-      options: ["Performance", "Partition tolerance", "Persistence", "Parallelism"],
+      options: [
+        "Performance",
+        "Partition tolerance",
+        "Persistence",
+        "Parallelism",
+      ],
       correctIndex: 1,
       durationMs: 3000,
     },
@@ -286,7 +301,12 @@ export const QTE_DEFINITIONS: QteDefinition[] = [
     difficulty: 4,
     params: {
       question: "NOT needed for deadlock?",
-      options: ["Mutual exclusion", "Hold & wait", "Starvation", "Circular wait"],
+      options: [
+        "Mutual exclusion",
+        "Hold & wait",
+        "Starvation",
+        "Circular wait",
+      ],
       correctIndex: 2,
       durationMs: 3000,
     },

@@ -34,9 +34,15 @@ export const playLoserSound = (scene: Phaser.Scene): void => {
   droneGain.connect(ctx.destination);
   drone.type = "sawtooth";
   drone.frequency.setValueAtTime(130, now + notes.length * 0.18);
-  drone.frequency.exponentialRampToValueAtTime(80, now + notes.length * 0.18 + 0.6);
+  drone.frequency.exponentialRampToValueAtTime(
+    80,
+    now + notes.length * 0.18 + 0.6,
+  );
   droneGain.gain.setValueAtTime(0.12, now + notes.length * 0.18);
-  droneGain.gain.exponentialRampToValueAtTime(0.0001, now + notes.length * 0.18 + 0.6);
+  droneGain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now + notes.length * 0.18 + 0.6,
+  );
   drone.start(now + notes.length * 0.18);
   drone.stop(now + notes.length * 0.18 + 0.6);
 };

@@ -33,7 +33,10 @@ export const playWinnerSound = (scene: Phaser.Scene): void => {
   held.type = "square";
   held.frequency.setValueAtTime(659, now + notes.length * 0.1);
   heldGain.gain.setValueAtTime(0.22, now + notes.length * 0.1);
-  heldGain.gain.exponentialRampToValueAtTime(0.0001, now + notes.length * 0.1 + 0.5);
+  heldGain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now + notes.length * 0.1 + 0.5,
+  );
   held.start(now + notes.length * 0.1);
   held.stop(now + notes.length * 0.1 + 0.5);
 };

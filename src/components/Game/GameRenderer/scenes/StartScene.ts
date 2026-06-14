@@ -1,23 +1,23 @@
-import Phaser from 'phaser';
+import Phaser from "phaser";
 import {
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
   HOME_BG_LAYER_KEYS,
-} from '../GameRenderer.constants';
-import type { StartSceneData } from '../GameRenderer.types';
-import { createButton } from '../utils/widgets/createButton';
+} from "../GameRenderer.constants";
+import type { StartSceneData } from "../GameRenderer.types";
+import { createButton } from "../utils/widgets/createButton";
 import {
   CHARACTER_SELECT_SCENE_KEY,
   CONNECT_SCENE_KEY,
   START_SCENE_KEY,
-} from './sceneKeys';
+} from "./sceneKeys";
 
 const TITLE_Y = 55;
 const BUTTONS_Y = GAME_HEIGHT - 45;
 
 export class StartScene extends Phaser.Scene {
-  private characters: StartSceneData['characters'] = [];
+  private characters: StartSceneData["characters"] = [];
 
   constructor() {
     super(START_SCENE_KEY);
@@ -38,7 +38,7 @@ export class StartScene extends Phaser.Scene {
       targets: bg,
       alpha: 1,
       duration: 600,
-      ease: 'Sine.easeOut',
+      ease: "Sine.easeOut",
     });
 
     const layer3 = bgLayers[2];
@@ -46,7 +46,7 @@ export class StartScene extends Phaser.Scene {
       targets: layer3,
       y: GAME_HEIGHT / 2 - 4,
       duration: 2000,
-      ease: 'Sine.easeInOut',
+      ease: "Sine.easeInOut",
       yoyo: true,
       repeat: -1,
     });
@@ -55,7 +55,7 @@ export class StartScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 - 115,
       BUTTONS_Y,
-      'Single Player',
+      "Single Player",
       {
         width: 200,
         height: 40,
@@ -63,7 +63,7 @@ export class StartScene extends Phaser.Scene {
         fontSize: 12,
         onClick: () =>
           this.transitionTo(CHARACTER_SELECT_SCENE_KEY, {
-            mode: 'single',
+            mode: "single",
             characters: this.characters,
           }),
       },
@@ -74,14 +74,14 @@ export class StartScene extends Phaser.Scene {
       alpha: 1,
       y: BUTTONS_Y,
       duration: 500,
-      ease: 'Back.easeOut',
+      ease: "Back.easeOut",
       delay: 400,
       onComplete: () => {
         this.tweens.add({
           targets: singleBtn,
           y: BUTTONS_Y - 4,
           duration: 2000,
-          ease: 'Sine.easeInOut',
+          ease: "Sine.easeInOut",
           yoyo: true,
           repeat: -1,
         });
@@ -92,7 +92,7 @@ export class StartScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 + 115,
       BUTTONS_Y,
-      'Multiplayer',
+      "Multiplayer",
       {
         width: 200,
         height: 40,
@@ -100,7 +100,7 @@ export class StartScene extends Phaser.Scene {
         fontSize: 12,
         onClick: () =>
           this.transitionTo(CONNECT_SCENE_KEY, {
-            mode: 'multiplayer',
+            mode: "multiplayer",
             characters: this.characters,
           }),
       },
@@ -111,14 +111,14 @@ export class StartScene extends Phaser.Scene {
       alpha: 1,
       y: BUTTONS_Y,
       duration: 500,
-      ease: 'Back.easeOut',
+      ease: "Back.easeOut",
       delay: 540,
       onComplete: () => {
         this.tweens.add({
           targets: multiBtn,
           y: BUTTONS_Y - 4,
           duration: 2200,
-          ease: 'Sine.easeInOut',
+          ease: "Sine.easeInOut",
           yoyo: true,
           repeat: -1,
         });
