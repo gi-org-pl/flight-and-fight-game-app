@@ -38,7 +38,11 @@ export interface FightSceneData {
   mode: GameMode;
   characters: CharacterResponse[];
   roster: string[];
+  /** Opponent's roster in server-returned order; index 0 goes to the apex slot. Multiplayer only. */
+  opponentRoster?: string[];
   session?: SessionInfo;
+  /** currentlyAttackingPlayerId from the ready session; null means not yet decided. Multiplayer only. */
+  attackingPlayerId?: string | null;
 }
 
 export interface WinnerSceneData {
@@ -59,4 +63,5 @@ export interface Fighter {
   stats: CharacterStatsResponse;
   maxHealth: number;
   health: number;
+  superpowerLastUsedRound: number;
 }

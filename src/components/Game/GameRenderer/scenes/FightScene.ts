@@ -3,6 +3,7 @@ import type {
   CharacterResponse,
   CharacterType,
 } from "@/services/api/schemas/character";
+import type { GameService } from "@/services/game/gameService";
 import {
   GAME_BITMAP_FONT,
   GAME_HEIGHT,
@@ -24,9 +25,17 @@ import { FIGHT_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
 
 const FONT_TITLE = 16;
 const FONT_BODY = 8;
+const FONT_ROUND_NUM = 14;
+
+// --- Round panel (top-centre) -----------------------------------------------
+const ROUND_NUM_W = 26;
+const ROUND_LABEL_W = 60;
+const ROUND_PANEL_H = 20;
+const ROUND_PANEL_Y = 4;
+const ROUND_BANNER_H = 10;
 
 // --- Formation (chevron wedge, per design) ----------------------------------
-const VS_Y = 135;
+const VS_Y = 154;
 const AVATAR_SIZE = 28;
 const LEADER_AVATAR_SIZE = 38;
 
@@ -38,7 +47,8 @@ const NAME_OFFSET_Y = 30;
 const FRAME_PADDING = 6;
 
 // --- Team HP banners (top corners) ------------------------------------------
-const TEAM_BAR_Y = 22;
+const TEAM_LABEL_Y = 10;
+const TEAM_BAR_Y = 20;
 const TEAM_BAR_WIDTH = 150;
 const TEAM_BAR_HEIGHT = 8;
 const PLAYER_BAR_X = 88;
@@ -48,9 +58,81 @@ const ENEMY_BAR_X = GAME_WIDTH - 88;
 const LIVE_TINT = 0xff_ff_ff;
 const ENEMY_TURN_DELAY_MS = 900;
 
+// --- Superpower -------------------------------------------------------------
+const SUPERPOWER_COOLDOWN_ROUNDS = 5;
+
+// --- Round panel animations -------------------------------------------------
+const YOUR_TURN_SLIDE_MS = 240;
+const YOUR_TURN_FADE_MS = 180;
+const ROUND_PANEL_DEPTH = 2; // above the YOUR TURN strip so it hides behind the panel
+const ROUND_NUM_SLIDE_Y = 6;
+const ROUND_NUM_FADE_MS = 220;
+
+// --- Toast notification -----------------------------------------------------
+const TOAST_X = 8;
+const TOAST_Y = 248;
+const TOAST_ENTER_Y = 260;
+const TOAST_EXIT_Y = 236;
+const TOAST_MAX_W = 200;
+const TOAST_PADDING_X = 8;
+const TOAST_PADDING_Y = 5;
+const TOAST_FADE_IN_MS = 220;
+const TOAST_HOLD_MS = 1800;
+const TOAST_HOLD_MIN_MS = 300;
+const TOAST_FADE_OUT_MS = 380;
+const TOAST_DEPTH = 10;
+
+// --- Quick Time Event -------------------------------------------------------
+const QTE_DURATION_MS = 2200;
+const QTE_PANEL_W = 176;
+const QTE_PANEL_H = 62;
+const QTE_BAR_W = 144;
+const QTE_BAR_H = 10;
+const QTE_RESULT_HOLD_MS = 500;
+const QTE_DEPTH = 20;
+
+// --- HP drain animation -----------------------------------------------------
+const HP_DRAIN_DELAY = 500;
+const HP_DRAIN_DURATION = 380;
+const HP_TRACK_ALPHA = 0.45;
+
+// --- Vignette ---------------------------------------------------------------
+const VIGNETTE_BORDER = 30;
+const VIGNETTE_LOW_HP = 0.35; // threshold below which ambient vignette appears
+const VIGNETTE_AMBIENT_MAX = 0.42; // alpha at 0 HP
+const VIGNETTE_FLASH_ALPHA = 0.68; // spike alpha on player hit
+const VIGNETTE_FLASH_DURATION = 780;
+const VIGNETTE_PULSE_SPEED = 0.0018; // rad/ms
+const VIGNETTE_PULSE_AMP = 0.1;
+
 // --- Animation --------------------------------------------------------------
 const MOVE_DURATION = 350;
 const MOVE_EASE = "Cubic.Out";
+
+// --- Clash animation (leaders meet at top-centre before trading blows) ------
+const CLASH_Y = 90;
+const CLASH_PLAYER_X = 200;
+const CLASH_ENEMY_X = 280;
+// Phase durations (ms)
+const CLASH_APPROACH_DURATION = 420;
+const CLASH_FACEOFF_PAUSE = 110;
+const CLASH_WINDUP_DURATION = 210;
+const CLASH_STRIKE_DURATION = 110;
+const CLASH_IMPACT_HOLD = 120;
+const CLASH_RECOIL_DURATION = 200;
+const CLASH_RETURN_DURATION = 300;
+// Tilt angles (degrees, positive = clockwise)
+const CLASH_APPROACH_TILT = 12;
+const CLASH_WINDUP_TILT = 20;
+const CLASH_STRIKE_TILT = 33;
+const CLASH_GUARD_TILT = 10;
+const CLASH_RECOIL_TILT = 30;
+const CLASH_SETTLE_ATK_TILT = 14;
+const CLASH_SETTLE_DEF_TILT = 10;
+// Position offsets & scale
+const CLASH_LUNGE_OVERSHOOT = 22;
+const CLASH_KNOCKBACK = 20;
+const CLASH_IMPACT_SCALE = 1.18;
 // Impact flash: scale punch before tumbling.
 const IMPACT_SCALE = 1.3;
 const IMPACT_DURATION = 70;
@@ -71,6 +153,8 @@ interface FighterView {
   avatar: Phaser.GameObjects.Image;
   frame: Phaser.GameObjects.Rectangle;
   hpFill: Phaser.GameObjects.Rectangle;
+  hpDrain: Phaser.GameObjects.Rectangle;
+  prevHealth: number;
   // anchorX/Y: live position (tweened). update() adds the wander offset on top.
   anchorX: number;
   anchorY: number;
@@ -85,6 +169,8 @@ interface FighterView {
 
 interface TeamBanner {
   fill: Phaser.GameObjects.Rectangle;
+  drain: Phaser.GameObjects.Rectangle;
+  prevWidth: number;
 }
 
 export class FightScene extends Phaser.Scene {
@@ -105,11 +191,29 @@ export class FightScene extends Phaser.Scene {
   private turn: FightSide = "player";
   private round = 1;
   private resolved = false;
+  private animating = false;
+
+  private gameService?: GameService;
+  private myPlayerId?: string;
+  private awaitingServer = false;
 
   private opponentLabel = "Computer";
-  private log?: Phaser.GameObjects.BitmapText;
-  private roundText?: Phaser.GameObjects.BitmapText;
+  private toastQueue: string[] = [];
+  private toastBusy = false;
+  private roundNumText?: Phaser.GameObjects.BitmapText;
+  private roundNumMidY = 0;
+  private prevRoundDisplayed = 1;
+  private yourTurnBg?: Phaser.GameObjects.Rectangle;
+  private yourTurnText?: Phaser.GameObjects.BitmapText;
+  private yourTurnVisibleY = 0;
+  private prevShowYourTurn = false;
   private attackButton?: Phaser.GameObjects.Container;
+  private superpowerButton?: Phaser.GameObjects.Container;
+
+  private vignetteAmbient?: Phaser.GameObjects.Graphics;
+  private vignetteFlash?: Phaser.GameObjects.Rectangle;
+  private vignetteBaseAlpha = 0;
+  private prevPlayerHpRatio = 1;
 
   constructor() {
     super(FIGHT_SCENE_KEY);
@@ -118,8 +222,11 @@ export class FightScene extends Phaser.Scene {
   create(data: FightSceneData): void {
     this.cameras.main.fadeIn(350, 174, 158, 225);
     this.resetState(data);
+    if (this.gameService) {
+      this.subscribeToGameEvents();
+    }
 
-    const overlay = this.add
+    this.add
       .rectangle(
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2,
@@ -127,30 +234,25 @@ export class FightScene extends Phaser.Scene {
         GAME_HEIGHT,
         GAME_PALETTE.PERIWINKLE,
       )
-      .setAlpha(1);
-
-    this.tweens.add({
-      targets: overlay,
-      alpha: 0.9,
-      duration: 600,
-      ease: "Cubic.Out",
-    });
+      .setAlpha(0.9);
 
     createBitmapText(this, GAME_WIDTH / 2, VS_Y, "VS", FONT_TITLE);
-    this.roundText = createBitmapText(this, GAME_WIDTH / 2, 12, "", FONT_BODY);
+    this.buildRoundPanel();
 
     this.buildBanners();
     this.buildFormation("player", this.playerTeam, this.playerViews);
     this.buildFormation("enemy", this.enemyTeam, this.enemyViews);
     this.buildControls();
+    this.buildVignette();
 
     this.refresh();
-    this.updateLog("Pick an enemy, then Attack.");
+    this.showToast(">> Pick a target & attack!");
   }
 
   update(time: number): void {
     this.applyWander(this.playerViews, this.playerTeam, time);
     this.applyWander(this.enemyViews, this.enemyTeam, time);
+    this.applyVignetteAmbient(time);
   }
 
   // --- Wander ----------------------------------------------------------------
@@ -188,24 +290,104 @@ export class FightScene extends Phaser.Scene {
       );
 
     this.playerTeam = playerCharacters.map(createFighter);
-    this.enemyTeam = createEnemyRoster(
-      data.characters,
-      data.roster,
-      MAX_ROSTER,
-    ).map(createFighter);
+
+    const enemyCharacters = data.opponentRoster
+      ? data.opponentRoster
+          .map((id) => byId.get(id as CharacterType))
+          .filter((c): c is CharacterResponse => Boolean(c))
+      : createEnemyRoster(data.characters, data.roster, MAX_ROSTER);
+    this.enemyTeam = enemyCharacters.map(createFighter);
 
     this.playerViews = [];
     this.enemyViews = [];
     // Initial formation order: 0, 1, 2, … roster length.
     this.playerOrder = this.playerTeam.map((_, i) => i);
     this.enemyOrder = this.enemyTeam.map((_, i) => i);
+    this.gameService = data.session?.gameService;
+    this.myPlayerId = data.session?.playerId;
+    this.awaitingServer = false;
     this.selectedTarget = null;
-    this.turn = "player";
+    this.turn =
+      data.mode === "multiplayer" && data.attackingPlayerId !== undefined
+        ? data.attackingPlayerId === this.myPlayerId
+          ? "player"
+          : "enemy"
+        : "player";
     this.round = 1;
     this.resolved = false;
+    this.prevRoundDisplayed = 1;
+    this.prevShowYourTurn = false;
   }
 
   // --- Build -----------------------------------------------------------------
+
+  private buildRoundPanel(): void {
+    const totalW = ROUND_NUM_W + ROUND_LABEL_W;
+    const leftEdge = GAME_WIDTH / 2 - totalW / 2;
+    const midY = ROUND_PANEL_Y + ROUND_PANEL_H / 2;
+
+    this.add
+      .rectangle(
+        leftEdge,
+        ROUND_PANEL_Y,
+        ROUND_NUM_W,
+        ROUND_PANEL_H,
+        GAME_PALETTE.MAUVE,
+      )
+      .setOrigin(0, 0)
+      .setDepth(ROUND_PANEL_DEPTH);
+    this.add
+      .rectangle(
+        leftEdge + ROUND_NUM_W,
+        ROUND_PANEL_Y,
+        ROUND_LABEL_W,
+        ROUND_PANEL_H,
+        GAME_PALETTE.LAVENDER,
+      )
+      .setOrigin(0, 0)
+      .setDepth(ROUND_PANEL_DEPTH);
+
+    this.roundNumMidY = midY;
+    this.roundNumText = this.add
+      .bitmapText(
+        leftEdge + ROUND_NUM_W / 2,
+        midY,
+        GAME_BITMAP_FONT,
+        "1",
+        FONT_ROUND_NUM,
+      )
+      .setOrigin(0.5)
+      .setDepth(ROUND_PANEL_DEPTH);
+    this.add
+      .bitmapText(
+        leftEdge + ROUND_NUM_W + ROUND_LABEL_W / 2,
+        midY,
+        GAME_BITMAP_FONT,
+        "Round",
+        FONT_BODY,
+      )
+      .setOrigin(0.5)
+      .setDepth(ROUND_PANEL_DEPTH);
+
+    const bannerY = ROUND_PANEL_Y + ROUND_PANEL_H;
+    this.yourTurnVisibleY = bannerY;
+    // Start retracted (above bannerY, hidden behind the round panel).
+    const hiddenY = bannerY - ROUND_BANNER_H;
+    this.yourTurnBg = this.add
+      .rectangle(leftEdge, hiddenY, totalW, ROUND_BANNER_H, GAME_PALETTE.ORANGE)
+      .setOrigin(0, 0)
+      .setAlpha(0);
+    this.yourTurnText = this.add
+      .bitmapText(
+        GAME_WIDTH / 2,
+        hiddenY + ROUND_BANNER_H / 2,
+        GAME_BITMAP_FONT,
+        "YOUR TURN",
+        FONT_BODY,
+      )
+      .setOrigin(0.5)
+      .setAlpha(0);
+  }
 
   private buildBanners(): void {
     this.playerBanner = this.buildBanner(PLAYER_BAR_X, "You");
@@ -213,14 +395,28 @@ export class FightScene extends Phaser.Scene {
   }
 
   private buildBanner(x: number, name: string): TeamBanner {
-    createBitmapText(this, x, 8, name, FONT_BODY);
-    this.add.rectangle(
-      x,
-      TEAM_BAR_Y,
-      TEAM_BAR_WIDTH,
-      TEAM_BAR_HEIGHT,
-      GAME_PALETTE.PERIWINKLE,
-    );
+    this.add
+      .rectangle(
+        x,
+        ROUND_PANEL_Y,
+        TEAM_BAR_WIDTH,
+        ROUND_PANEL_H,
+        GAME_PALETTE.LAVENDER,
+      )
+      .setOrigin(0.5, 0);
+    createBitmapText(this, x, TEAM_LABEL_Y, name, FONT_BODY);
+    this.add
+      .rectangle(x, TEAM_BAR_Y, TEAM_BAR_WIDTH, TEAM_BAR_HEIGHT, 0x00_00_00)
+      .setAlpha(HP_TRACK_ALPHA);
+    const drain = this.add
+      .rectangle(
+        x - TEAM_BAR_WIDTH / 2,
+        TEAM_BAR_Y,
+        TEAM_BAR_WIDTH,
+        TEAM_BAR_HEIGHT,
+        GAME_PALETTE.RED,
+      )
+      .setOrigin(0, 0.5);
     const fill = this.add
       .rectangle(
         x - TEAM_BAR_WIDTH / 2,
@@ -231,7 +427,7 @@ export class FightScene extends Phaser.Scene {
       )
       .setOrigin(0, 0.5);
 
-    return { fill };
+    return { fill, drain, prevWidth: TEAM_BAR_WIDTH };
   }
 
   private buildFormation(
@@ -261,13 +457,18 @@ export class FightScene extends Phaser.Scene {
         .image(0, 0, avatarTextureKey(fighter.id))
         .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE);
 
-      const hpTrack = this.add.rectangle(
-        0,
-        HP_BAR_OFFSET_Y,
-        HP_BAR_WIDTH,
-        HP_BAR_HEIGHT,
-        GAME_PALETTE.PERIWINKLE,
-      );
+      const hpTrack = this.add
+        .rectangle(0, HP_BAR_OFFSET_Y, HP_BAR_WIDTH, HP_BAR_HEIGHT, 0x00_00_00)
+        .setAlpha(HP_TRACK_ALPHA);
+      const hpDrain = this.add
+        .rectangle(
+          -HP_BAR_WIDTH / 2,
+          HP_BAR_OFFSET_Y,
+          HP_BAR_WIDTH,
+          HP_BAR_HEIGHT,
+          GAME_PALETTE.RED,
+        )
+        .setOrigin(0, 0.5);
       const hpFill = this.add
         .rectangle(
           -HP_BAR_WIDTH / 2,
@@ -286,6 +487,7 @@ export class FightScene extends Phaser.Scene {
         frame,
         avatar,
         hpTrack,
+        hpDrain,
         hpFill,
         nameText,
       ]);
@@ -300,6 +502,8 @@ export class FightScene extends Phaser.Scene {
         avatar,
         frame,
         hpFill,
+        hpDrain,
+        prevHealth: fighter.maxHealth,
         anchorX: pos.x,
         anchorY: pos.y,
         targetX: pos.x,
@@ -311,25 +515,82 @@ export class FightScene extends Phaser.Scene {
   }
 
   private buildControls(): void {
-    this.log = createBitmapText(this, GAME_WIDTH / 2, 218, "", FONT_BODY);
+    const ATTACK_W = 100;
+    const SUPER_W = 140;
+    const BTN_GAP = 10;
+    const BTN_Y = GAME_HEIGHT - 20;
+    const attackX = GAME_WIDTH - 58;
+    const superpowerX = attackX - ATTACK_W / 2 - BTN_GAP - SUPER_W / 2;
 
-    createButton(this, 70, GAME_HEIGHT - 20, "Retreat", {
-      width: 96,
-      fill: GAME_PALETTE.ORCHID,
-      onClick: () =>
-        this.scene.start(WINNER_SCENE_KEY, { winner: this.opponentLabel }),
-    });
-    this.attackButton = createButton(
+    this.superpowerButton = createButton(
       this,
-      GAME_WIDTH - 88,
-      GAME_HEIGHT - 20,
-      "Attack",
+      superpowerX,
+      BTN_Y,
+      "Superpower",
       {
-        width: 140,
-        fill: GAME_PALETTE.RED,
-        onClick: () => this.attack(),
+        width: SUPER_W,
+        fontSize: 8,
+        fill: GAME_PALETTE.ORANGE,
+        onClick: () => this.superpower(),
       },
     );
+    this.spawnSuperpowerParticles(superpowerX, BTN_Y, SUPER_W, 30);
+    this.attackButton = createButton(this, attackX, BTN_Y, "Attack", {
+      width: ATTACK_W,
+      fill: GAME_PALETTE.ROSE,
+      onClick: () => this.attack(),
+    });
+  }
+
+  private spawnSuperpowerParticles(
+    cx: number,
+    cy: number,
+    w: number,
+    h: number,
+  ): void {
+    // Step interval for discrete pixel-art motion (ms per pixel step).
+    const STEP_MS = 80;
+    const STEPS = 6;
+
+    this.time.addEvent({
+      delay: 200,
+      loop: true,
+      callback: () => {
+        if (!this.sys.isActive()) return;
+        for (let i = 0; i < 2; i += 1) {
+          const angle = Math.random() * Math.PI * 2;
+          const rx = Math.round(w / 2 + 4 + Math.random() * 6);
+          const ry = Math.round(h / 2 + 4 + Math.random() * 4);
+          const startX = Math.round(cx + Math.cos(angle) * rx);
+          const startY = Math.round(cy + Math.sin(angle) * ry);
+          const size = Math.random() > 0.5 ? 2 : 3;
+          const color = Math.random() > 0.5 ? 0xf5_b7_70 : 0xff_d2_7f;
+          const dx = Math.round(Math.cos(angle) * 12);
+          const dy = Math.round(Math.sin(angle) * 12);
+          const particle = this.add
+            .rectangle(startX, startY, size, size, color)
+            .setDepth(5);
+
+          for (let step = 1; step <= STEPS; step += 1) {
+            const s = step;
+            this.time.delayedCall(s * STEP_MS, () => {
+              if (!particle.active) return;
+              if (s === STEPS) {
+                particle.destroy();
+                return;
+              }
+              // Snap to integer pixel positions each step.
+              particle.setPosition(
+                startX + Math.round((dx * s) / STEPS),
+                startY + Math.round((dy * s) / STEPS),
+              );
+              // Two discrete alpha levels: full → half → gone.
+              particle.setAlpha(s < STEPS / 2 ? 1 : 0.4);
+            });
+          }
+        }
+      },
+    });
   }
 
   // --- Player turn -----------------------------------------------------------
@@ -344,38 +605,126 @@ export class FightScene extends Phaser.Scene {
 
     this.selectedTarget = index;
     this.refresh();
-    this.updateLog(`Target: ${this.enemyTeam[index].name}. Press Attack.`);
+    this.showToast(`[>] ${this.enemyTeam[index].name} targeted`);
   }
 
   private attack(): void {
-    if (this.turn !== "player" || this.resolved) {
+    if (
+      this.turn !== "player" ||
+      this.resolved ||
+      this.animating ||
+      this.awaitingServer
+    ) {
       return;
     }
     if (this.selectedTarget === null) {
-      this.updateLog("Select an enemy fighter first.");
+      this.showToast("[!] Pick a target first");
+      return;
+    }
+
+    if (this.gameService) {
+      this.awaitingServer = true;
+      this.animating = true;
+      this.refresh();
+      this.gameService.attack();
       return;
     }
 
     const leadIndex = this.playerOrder[0];
     const attacker = this.playerTeam[leadIndex];
     const defender = this.enemyTeam[this.selectedTarget];
+    const attackerView = this.playerViews[leadIndex];
+    const defenderView = this.enemyViews[this.selectedTarget];
 
-    this.applyHit(attacker, defender);
-    this.updateLog(
-      `${attacker.name} hits ${defender.name}${isAlive(defender) ? "!" : " - down!"}`,
+    this.animating = true;
+    this.refresh();
+
+    this.animateClash(
+      attackerView,
+      defenderView,
+      "player",
+      () => {
+        this.applyHit(attacker, defender);
+        this.showToast(
+          `[X] ${attacker.name} -> ${defender.name}${isAlive(defender) ? "!" : " down!"}`,
+        );
+      },
+      () => {
+        this.animating = false;
+
+        if (this.finishIfResolved()) {
+          return;
+        }
+
+        this.rotateOrder("player");
+        this.selectedTarget = null;
+        this.turn = "enemy";
+        this.refresh();
+
+        this.time.delayedCall(ENEMY_TURN_DELAY_MS, () => this.enemyTurn());
+      },
     );
+  }
 
-    if (this.finishIfResolved()) {
+  private superpower(): void {
+    if (this.gameService) return;
+    if (this.turn !== "player" || this.resolved || this.animating) {
+      return;
+    }
+    if (this.selectedTarget === null) {
+      this.showToast("[!] Pick a target first");
       return;
     }
 
-    // Rotate the leader to the back of the queue: [0,1,2,3,4] → [1,2,3,4,0].
-    this.rotateOrder("player");
-    this.selectedTarget = null;
-    this.turn = "enemy";
+    const leadIndex = this.playerOrder[0];
+    const attacker = this.playerTeam[leadIndex];
+
+    const roundsSinceUsed =
+      attacker.superpowerLastUsedRound === 0
+        ? SUPERPOWER_COOLDOWN_ROUNDS
+        : attacker.superpowerLastUsedRound - this.round;
+    if (roundsSinceUsed < SUPERPOWER_COOLDOWN_ROUNDS) {
+      this.showToast(
+        `[!] ${attacker.name} superpower ready in ${SUPERPOWER_COOLDOWN_ROUNDS - roundsSinceUsed} round(s)`,
+      );
+      return;
+    }
+    const defender = this.enemyTeam[this.selectedTarget];
+    const attackerView = this.playerViews[leadIndex];
+    const defenderView = this.enemyViews[this.selectedTarget];
+
+    this.animating = true;
     this.refresh();
 
-    this.time.delayedCall(ENEMY_TURN_DELAY_MS, () => this.enemyTurn());
+    this.animateClash(
+      attackerView,
+      defenderView,
+      "player",
+      () => {
+        attacker.superpowerLastUsedRound = this.round;
+        const base = computeDamage(attacker, defender);
+        const superDamage = Math.max(5, Math.round(base * 2.5));
+        defender.health = Math.max(0, defender.health - superDamage);
+        this.refresh();
+        this.showToast(
+          `[**] ${attacker.name} -> ${defender.name}${isAlive(defender) ? "!" : " down!"}`,
+        );
+      },
+      () => {
+        this.animating = false;
+
+        if (this.finishIfResolved()) {
+          return;
+        }
+
+        this.rotateOrder("player");
+        this.selectedTarget = null;
+        this.turn = "enemy";
+        this.refresh();
+
+        this.time.delayedCall(ENEMY_TURN_DELAY_MS, () => this.enemyTurn());
+      },
+    );
   }
 
   // --- Enemy turn ------------------------------------------------------------
@@ -387,22 +736,36 @@ export class FightScene extends Phaser.Scene {
 
     const leadIndex = this.enemyOrder[0];
     const attacker = this.enemyTeam[leadIndex];
-    const target = chooseEnemyTarget(this.playerTeam);
-    const defender = this.playerTeam[target];
+    const targetIndex = chooseEnemyTarget(this.playerTeam);
+    const defender = this.playerTeam[targetIndex];
+    const attackerView = this.enemyViews[leadIndex];
+    const defenderView = this.playerViews[targetIndex];
 
-    this.applyHit(attacker, defender);
-    this.updateLog(
-      `${attacker.name} hits ${defender.name}${isAlive(defender) ? "!" : " - down!"}`,
+    this.animating = true;
+
+    this.animateClash(
+      attackerView,
+      defenderView,
+      "enemy",
+      () => {
+        this.applyHit(attacker, defender);
+        this.showToast(
+          `[X] ${attacker.name} -> ${defender.name}${isAlive(defender) ? "!" : " down!"}`,
+        );
+      },
+      () => {
+        this.animating = false;
+
+        if (this.finishIfResolved()) {
+          return;
+        }
+
+        this.rotateOrder("enemy");
+        this.turn = "player";
+        this.round += 1;
+        this.refresh();
+      },
     );
-
-    if (this.finishIfResolved()) {
-      return;
-    }
-
-    this.rotateOrder("enemy");
-    this.turn = "player";
-    this.round += 1;
-    this.refresh();
   }
 
   // --- Shared ----------------------------------------------------------------
@@ -429,14 +792,32 @@ export class FightScene extends Phaser.Scene {
   }
 
   private finishIfResolved(): boolean {
-    const enemyDown = isTeamDefeated(this.enemyTeam);
+    if (this.resolved) return true;
+
     const playerDown = isTeamDefeated(this.playerTeam);
+
+    // Multiplayer: only my own team's wipe is authoritative — its health comes
+    // from the server via `charactersUpdated`. The enemy's health on my screen
+    // is a local estimate (the protocol never sends it to me), so a win is
+    // declared by the server closing the session (see `onTurnChanged`), never
+    // from the local enemy estimate.
+    if (this.gameService) {
+      if (!playerDown) {
+        return false;
+      }
+      return this.finishWith(this.opponentLabel);
+    }
+
+    const enemyDown = isTeamDefeated(this.enemyTeam);
     if (!enemyDown && !playerDown) {
       return false;
     }
+    return this.finishWith(enemyDown ? "You" : this.opponentLabel);
+  }
 
+  private finishWith(winner: string): boolean {
+    if (this.resolved) return true;
     this.resolved = true;
-    const winner = enemyDown ? "You" : this.opponentLabel;
     this.refresh();
     this.time.delayedCall(ENEMY_TURN_DELAY_MS * 2, () => {
       if (this.sys.isActive()) {
@@ -471,15 +852,42 @@ export class FightScene extends Phaser.Scene {
     this.syncBanner(this.playerBanner, this.playerTeam);
     this.syncBanner(this.enemyBanner, this.enemyTeam);
 
-    const turnLabel =
-      this.turn === "player" ? "Your turn" : `${this.opponentLabel}'s turn`;
-    this.roundText?.setText(
-      this.resolved ? "Battle over" : `Round ${this.round} - ${turnLabel}`,
-    );
+    if (this.round !== this.prevRoundDisplayed) {
+      this.animateRoundNumber(this.prevRoundDisplayed, this.round);
+      this.prevRoundDisplayed = this.round;
+    }
+
+    const showYourTurn = !this.resolved && this.turn === "player";
+    if (showYourTurn !== this.prevShowYourTurn) {
+      this.animateYourTurn(showYourTurn);
+      this.prevShowYourTurn = showYourTurn;
+    }
 
     const canAttack =
-      !this.resolved && this.turn === "player" && this.selectedTarget !== null;
+      !this.resolved &&
+      !this.awaitingServer &&
+      this.turn === "player" &&
+      this.selectedTarget !== null;
     this.attackButton?.setAlpha(canAttack ? 1 : 0.4);
+    const leader =
+      this.playerOrder[0] !== undefined
+        ? this.playerTeam[this.playerOrder[0]]
+        : undefined;
+    const superpowerReady =
+      leader !== undefined &&
+      (leader.superpowerLastUsedRound === 0 ||
+        leader.superpowerLastUsedRound - this.round <
+          SUPERPOWER_COOLDOWN_ROUNDS);
+    this.superpowerButton?.setAlpha(
+      canAttack && !this.gameService && superpowerReady ? 1 : 0.4,
+    );
+
+    const playerTotal = this.playerTeam.reduce((s, f) => s + f.maxHealth, 0);
+    const playerCurrent = this.playerTeam.reduce((s, f) => s + f.health, 0);
+    const playerRatio = playerTotal === 0 ? 0 : playerCurrent / playerTotal;
+    const tookDamage = playerRatio < this.prevPlayerHpRatio;
+    this.prevPlayerHpRatio = playerRatio;
+    this.syncVignette(playerRatio, tookDamage);
   }
 
   // Compute slot positions from the ordered fighter queue. The fighter at
@@ -568,12 +976,26 @@ export class FightScene extends Phaser.Scene {
 
       view.avatar.setDisplaySize(size, size);
       view.avatar.setTint(LIVE_TINT);
-      view.hpFill
-        .setVisible(true)
-        .setSize(
-          (fighter.health / fighter.maxHealth) * HP_BAR_WIDTH,
-          HP_BAR_HEIGHT,
-        );
+
+      const newWidth = (fighter.health / fighter.maxHealth) * HP_BAR_WIDTH;
+
+      if (fighter.health < view.prevHealth) {
+        const drainWidth = (view.prevHealth / fighter.maxHealth) * HP_BAR_WIDTH;
+        view.hpDrain.setSize(drainWidth, HP_BAR_HEIGHT);
+        this.tweens.killTweensOf(view.hpDrain);
+        this.time.delayedCall(HP_DRAIN_DELAY, () => {
+          if (!this.sys.isActive()) return;
+          this.tweens.add({
+            targets: view.hpDrain,
+            width: newWidth,
+            duration: HP_DRAIN_DURATION,
+            ease: "Cubic.Out",
+          });
+        });
+      }
+
+      view.prevHealth = fighter.health;
+      view.hpFill.setVisible(true).setSize(newWidth, HP_BAR_HEIGHT);
       view.frame
         .setVisible(isLeader || isTarget)
         .setFillStyle(isTarget ? GAME_PALETTE.LAVENDER : GAME_PALETTE.BLUSH)
@@ -596,6 +1018,512 @@ export class FightScene extends Phaser.Scene {
     }
   }
 
+  // Move both leaders to the upper-centre clash area, lunge toward each other
+  // Multi-phase clash: approach → face-off → wind-up → strike → recoil → return.
+  private animateClash(
+    attackerView: FighterView,
+    defenderView: FighterView,
+    attackerSide: FightSide,
+    onImpact: () => void,
+    onComplete: () => void,
+  ): void {
+    this.clashApproach(attackerView, defenderView, attackerSide, () => {
+      this.clashStrike(
+        attackerView,
+        defenderView,
+        attackerSide,
+        onImpact,
+        onComplete,
+      );
+    });
+  }
+
+  // Phase 1: Move both fighters to the clash area. Calls onApproached when both arrive.
+  private clashApproach(
+    attackerView: FighterView,
+    defenderView: FighterView,
+    attackerSide: FightSide,
+    onApproached: () => void,
+  ): void {
+    if (!this.sys.isActive()) return;
+
+    const atkX = attackerSide === "player" ? CLASH_PLAYER_X : CLASH_ENEMY_X;
+    const defX = attackerSide === "player" ? CLASH_ENEMY_X : CLASH_PLAYER_X;
+    const dir = attackerSide === "player" ? 1 : -1;
+
+    attackerView.targetX = atkX;
+    attackerView.targetY = CLASH_Y;
+    defenderView.targetX = defX;
+    defenderView.targetY = CLASH_Y;
+
+    attackerView.moveTween?.stop();
+    defenderView.moveTween?.stop();
+
+    let approached = 0;
+    const onBothApproached = () => {
+      approached += 1;
+      if (approached < 2) return;
+      if (!this.sys.isActive()) return;
+      this.time.delayedCall(CLASH_FACEOFF_PAUSE, () => {
+        if (!this.sys.isActive()) return;
+        onApproached();
+      });
+    };
+
+    attackerView.moveTween = this.tweens.add({
+      targets: attackerView,
+      anchorX: atkX,
+      anchorY: CLASH_Y,
+      duration: CLASH_APPROACH_DURATION,
+      ease: MOVE_EASE,
+      onComplete: onBothApproached,
+    });
+    this.tweens.add({
+      targets: attackerView.container,
+      angle: dir * CLASH_APPROACH_TILT,
+      duration: CLASH_APPROACH_DURATION,
+      ease: MOVE_EASE,
+    });
+
+    defenderView.moveTween = this.tweens.add({
+      targets: defenderView,
+      anchorX: defX,
+      anchorY: CLASH_Y,
+      duration: CLASH_APPROACH_DURATION,
+      ease: MOVE_EASE,
+      onComplete: onBothApproached,
+    });
+    this.tweens.add({
+      targets: defenderView.container,
+      angle: -dir * CLASH_APPROACH_TILT,
+      duration: CLASH_APPROACH_DURATION,
+      ease: MOVE_EASE,
+    });
+  }
+
+  // Phases 3–7: Wind-up → strike → recoil → return. Assumes both fighters are
+  // already at the clash positions (after clashApproach or a looping windup).
+  private clashStrike(
+    attackerView: FighterView,
+    defenderView: FighterView,
+    attackerSide: FightSide,
+    onImpact: () => void,
+    onComplete: () => void,
+  ): void {
+    if (!this.sys.isActive()) return;
+
+    const atkX = attackerSide === "player" ? CLASH_PLAYER_X : CLASH_ENEMY_X;
+    const defX = attackerSide === "player" ? CLASH_ENEMY_X : CLASH_PLAYER_X;
+    const dir = attackerSide === "player" ? 1 : -1;
+
+    // --- Phase 3: Wind-up — attacker rocks back, defender shifts to guard. ---
+    this.tweens.killTweensOf(attackerView.container);
+    this.tweens.killTweensOf(defenderView.container);
+    this.tweens.add({
+      targets: attackerView.container,
+      angle: -dir * CLASH_WINDUP_TILT,
+      scaleX: 0.88,
+      scaleY: 0.88,
+      duration: CLASH_WINDUP_DURATION,
+      ease: "Cubic.Out",
+    });
+    this.tweens.add({
+      targets: defenderView.container,
+      angle: dir * CLASH_GUARD_TILT,
+      duration: CLASH_WINDUP_DURATION,
+      ease: "Cubic.Out",
+      onComplete: () => {
+        if (!this.sys.isActive()) return;
+
+        // --- Phase 4: Strike — attacker blasts past the centre line. ---
+        this.tweens.add({
+          targets: attackerView,
+          anchorX: defX - dir * CLASH_LUNGE_OVERSHOOT,
+          duration: CLASH_STRIKE_DURATION,
+          ease: "Cubic.In",
+        });
+        this.tweens.add({
+          targets: attackerView.container,
+          angle: dir * CLASH_STRIKE_TILT,
+          scaleX: CLASH_IMPACT_SCALE,
+          scaleY: CLASH_IMPACT_SCALE,
+          duration: CLASH_STRIKE_DURATION,
+          ease: "Cubic.In",
+        });
+        // Defender gets hit — knocked back with heavy recoil tilt.
+        this.tweens.add({
+          targets: defenderView,
+          anchorX: defX + dir * CLASH_KNOCKBACK,
+          duration: CLASH_STRIKE_DURATION,
+          ease: "Cubic.Out",
+        });
+        this.tweens.add({
+          targets: defenderView.container,
+          angle: -dir * CLASH_RECOIL_TILT,
+          duration: CLASH_STRIKE_DURATION,
+          ease: "Cubic.Out",
+          onComplete: () => {
+            if (!this.sys.isActive()) return;
+
+            onImpact();
+            this.shakeRenderer();
+
+            // --- Phase 5: Impact hold. ---
+            this.time.delayedCall(CLASH_IMPACT_HOLD, () => {
+              if (!this.sys.isActive()) return;
+
+              // --- Phase 6: Recoil settle — attacker pulls back, defender stumbles. ---
+              this.tweens.add({
+                targets: attackerView,
+                anchorX: atkX,
+                duration: CLASH_RECOIL_DURATION,
+                ease: "Cubic.Out",
+              });
+              this.tweens.add({
+                targets: attackerView.container,
+                angle: dir * CLASH_SETTLE_ATK_TILT,
+                scaleX: 1,
+                scaleY: 1,
+                duration: CLASH_RECOIL_DURATION,
+                ease: "Cubic.Out",
+              });
+              this.tweens.add({
+                targets: defenderView,
+                anchorX: defX,
+                duration: CLASH_RECOIL_DURATION,
+                ease: "Back.Out",
+              });
+              this.tweens.add({
+                targets: defenderView.container,
+                angle: -dir * CLASH_SETTLE_DEF_TILT,
+                duration: CLASH_RECOIL_DURATION,
+                ease: "Cubic.Out",
+                onComplete: () => {
+                  if (!this.sys.isActive()) return;
+
+                  // --- Phase 7: Straighten — angles return to 0. ---
+                  this.tweens.add({
+                    targets: attackerView.container,
+                    angle: 0,
+                    duration: CLASH_RETURN_DURATION,
+                    ease: "Cubic.Out",
+                  });
+                  this.tweens.add({
+                    targets: defenderView.container,
+                    angle: 0,
+                    duration: CLASH_RETURN_DURATION,
+                    ease: "Cubic.Out",
+                  });
+
+                  onComplete();
+                },
+              });
+            });
+          },
+        });
+      },
+    });
+  }
+
+  private animateYourTurn(show: boolean): void {
+    const visibleBgY = this.yourTurnVisibleY;
+    const visibleTextY = visibleBgY + ROUND_BANNER_H / 2;
+    const hiddenBgY = visibleBgY - ROUND_BANNER_H;
+    const hiddenTextY = hiddenBgY + ROUND_BANNER_H / 2;
+
+    if (this.yourTurnBg) {
+      this.tweens.killTweensOf(this.yourTurnBg);
+      this.tweens.add({
+        targets: this.yourTurnBg,
+        y: show ? visibleBgY : hiddenBgY,
+        alpha: show ? 1 : 0,
+        duration: show ? YOUR_TURN_SLIDE_MS : YOUR_TURN_FADE_MS,
+        ease: show ? "Back.Out" : "Cubic.In",
+      });
+    }
+    if (this.yourTurnText) {
+      this.tweens.killTweensOf(this.yourTurnText);
+      this.tweens.add({
+        targets: this.yourTurnText,
+        y: show ? visibleTextY : hiddenTextY,
+        alpha: show ? 1 : 0,
+        duration: show ? YOUR_TURN_SLIDE_MS : YOUR_TURN_FADE_MS,
+        ease: show ? "Back.Out" : "Cubic.In",
+      });
+    }
+  }
+
+  private animateRoundNumber(oldRound: number, newRound: number): void {
+    if (!this.roundNumText) return;
+    const x = this.roundNumText.x;
+    const midY = this.roundNumMidY;
+
+    const outgoing = this.add
+      .bitmapText(x, midY, GAME_BITMAP_FONT, String(oldRound), FONT_ROUND_NUM)
+      .setOrigin(0.5);
+    this.tweens.add({
+      targets: outgoing,
+      y: midY - ROUND_NUM_SLIDE_Y,
+      alpha: 0,
+      duration: ROUND_NUM_FADE_MS,
+      ease: "Cubic.Out",
+      onComplete: () => {
+        outgoing.destroy();
+      },
+    });
+
+    this.tweens.killTweensOf(this.roundNumText);
+    this.roundNumText
+      .setText(String(newRound))
+      .setAlpha(0)
+      .setY(midY + ROUND_NUM_SLIDE_Y);
+    this.tweens.add({
+      targets: this.roundNumText,
+      y: midY,
+      alpha: 1,
+      duration: ROUND_NUM_FADE_MS,
+      ease: "Cubic.Out",
+    });
+  }
+
+  private shakeRenderer(): void {
+    const el = this.game.canvas.parentElement;
+    if (!el) return;
+    const MAG = 5;
+    const STEPS = 10;
+    const STEP_MS = 18;
+    let step = 0;
+    const tick = () => {
+      if (!this.sys.isActive() || step >= STEPS) {
+        el.style.transform = "";
+        return;
+      }
+      const fade = 1 - step / STEPS;
+      const x = (Math.random() - 0.5) * MAG * 2 * fade;
+      const y = (Math.random() - 0.5) * MAG * 2 * fade;
+      el.style.transform = `translate(${x}px, ${y}px)`;
+      step++;
+      this.time.delayedCall(STEP_MS, tick);
+    };
+    tick();
+  }
+
+  private subscribeToGameEvents(): void {
+    const gs = this.gameService!;
+
+    const unsubAttacked = gs.onAttacked(({ attackingPlayerId }) => {
+      if (this.resolved || !this.sys.isActive()) return;
+      const iAmAttacker = attackingPlayerId === this.myPlayerId;
+
+      if (iAmAttacker) {
+        const leadIndex = this.playerOrder[0];
+        const targetIndex = this.selectedTarget ?? this.enemyOrder[0];
+        const attacker = this.playerTeam[leadIndex];
+        const defender = this.enemyTeam[targetIndex];
+
+        this.animateClash(
+          this.playerViews[leadIndex],
+          this.enemyViews[targetIndex],
+          "player",
+          () => {
+            this.applyHit(attacker, defender);
+            this.showToast(
+              `[X] ${attacker.name} -> ${defender.name}${isAlive(defender) ? "!" : " down!"}`,
+            );
+          },
+          () => {
+            this.awaitingServer = false;
+            this.animating = false;
+            this.rotateOrder("player");
+            this.selectedTarget = null;
+            if (!this.finishIfResolved()) {
+              this.refresh();
+            }
+          },
+        );
+      } else {
+        const enemyLeadIndex = this.enemyOrder[0];
+        const myLeadIndex = this.playerOrder[0];
+        const attacker = this.enemyTeam[enemyLeadIndex];
+        const defender = this.playerTeam[myLeadIndex];
+        const attackerView = this.enemyViews[enemyLeadIndex];
+        const defenderView = this.playerViews[myLeadIndex];
+        this.animating = true;
+
+        this.showToast(`[!] ${attacker.name} is attacking — DEFEND!`);
+
+        // Track which of approach/QTE finished first; strike when both are ready.
+        let qteMultiplier: number | undefined;
+        let approachReady = false;
+        let windupLoop: Phaser.Tweens.Tween | undefined;
+
+        const maybeStrike = () => {
+          if (qteMultiplier === undefined || !approachReady) return;
+          if (!this.sys.isActive()) return;
+
+          windupLoop?.stop();
+          windupLoop = undefined;
+
+          const multiplier = qteMultiplier;
+          const defenseLabel =
+            multiplier >= 1.8
+              ? "PERFECT"
+              : multiplier >= 1.4
+                ? "GREAT"
+                : multiplier >= 1.1
+                  ? "GOOD"
+                  : "TOO SLOW";
+          this.showToast(`[>] Defense: ${defenseLabel}`);
+
+          gs.defend();
+
+          this.clashStrike(
+            attackerView,
+            defenderView,
+            "enemy",
+            () => {
+              this.showToast(`[X] ${attacker.name} -> ${defender.name}!`);
+            },
+            () => {
+              this.animating = false;
+              this.rotateOrder("enemy");
+              this.refresh();
+            },
+          );
+        };
+
+        // Start approach immediately so the attacker is already moving during QTE.
+        this.clashApproach(attackerView, defenderView, "enemy", () => {
+          approachReady = true;
+          // Loop a wind-up pulse on the attacker while waiting for QTE.
+          windupLoop = this.tweens.add({
+            targets: attackerView.container,
+            scaleX: 0.88,
+            scaleY: 0.88,
+            angle: { from: -CLASH_APPROACH_TILT, to: -CLASH_WINDUP_TILT },
+            duration: 300,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.InOut",
+          });
+          maybeStrike();
+        });
+
+        this.showQTE((multiplier) => {
+          qteMultiplier = multiplier;
+          maybeStrike();
+        });
+      }
+    });
+
+    const unsubCharsUpdated = gs.onCharactersUpdated((characters) => {
+      if (this.resolved) return;
+      for (const char of characters) {
+        const fighter = this.playerTeam.find((f) => f.id === char.type);
+        if (fighter) {
+          fighter.health = char.stats.health;
+        }
+      }
+      this.refresh();
+      this.finishIfResolved();
+    });
+
+    const unsubTurnChanged = gs.onTurnChanged((session) => {
+      if (this.resolved) return;
+
+      // The server closes the session when the match is over. That is the only
+      // authoritative win signal: my team is still standing, so I won. (A loss
+      // is caught earlier the moment `charactersUpdated` wipes my team.)
+      if (session.state === "CLOSED") {
+        this.finishWith(
+          isTeamDefeated(this.playerTeam) ? this.opponentLabel : "You",
+        );
+        return;
+      }
+
+      const iAmAttacker =
+        session.currentlyAttackingPlayerId === this.myPlayerId;
+      this.turn = iAmAttacker ? "player" : "enemy";
+      this.round += 1;
+      this.refresh();
+      if (iAmAttacker) {
+        this.showToast(">> Your turn!");
+      }
+    });
+
+    const unsubException = gs.onException((error) => {
+      this.showToast(error.message);
+      this.awaitingServer = false;
+      this.animating = false;
+      this.refresh();
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      unsubAttacked();
+      unsubCharsUpdated();
+      unsubTurnChanged();
+      unsubException();
+    });
+  }
+
+  private buildVignette(): void {
+    const gfx = this.add.graphics();
+    gfx.fillStyle(GAME_PALETTE.RED, 1);
+    gfx.fillRect(0, 0, GAME_WIDTH, VIGNETTE_BORDER);
+    gfx.fillRect(0, GAME_HEIGHT - VIGNETTE_BORDER, GAME_WIDTH, VIGNETTE_BORDER);
+    gfx.fillRect(
+      0,
+      VIGNETTE_BORDER,
+      VIGNETTE_BORDER,
+      GAME_HEIGHT - VIGNETTE_BORDER * 2,
+    );
+    gfx.fillRect(
+      GAME_WIDTH - VIGNETTE_BORDER,
+      VIGNETTE_BORDER,
+      VIGNETTE_BORDER,
+      GAME_HEIGHT - VIGNETTE_BORDER * 2,
+    );
+    gfx.setAlpha(0).setDepth(15);
+    this.vignetteAmbient = gfx;
+
+    this.vignetteFlash = this.add
+      .rectangle(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2,
+        GAME_WIDTH,
+        GAME_HEIGHT,
+        GAME_PALETTE.RED,
+      )
+      .setAlpha(0)
+      .setDepth(15);
+  }
+
+  private applyVignetteAmbient(time: number): void {
+    if (!this.vignetteAmbient || this.vignetteBaseAlpha <= 0) return;
+    const pulse = Math.sin(time * VIGNETTE_PULSE_SPEED) * VIGNETTE_PULSE_AMP;
+    this.vignetteAmbient.setAlpha(Math.max(0, this.vignetteBaseAlpha + pulse));
+  }
+
+  private syncVignette(ratio: number, tookDamage: boolean): void {
+    if (!this.vignetteAmbient || !this.vignetteFlash) return;
+    this.vignetteBaseAlpha =
+      ratio <= VIGNETTE_LOW_HP
+        ? VIGNETTE_AMBIENT_MAX * (1 - ratio / VIGNETTE_LOW_HP)
+        : 0;
+    if (this.vignetteBaseAlpha <= 0) {
+      this.vignetteAmbient.setAlpha(0);
+    }
+    if (!tookDamage) return;
+    this.tweens.killTweensOf(this.vignetteFlash);
+    this.vignetteFlash.setAlpha(VIGNETTE_FLASH_ALPHA);
+    this.tweens.add({
+      targets: this.vignetteFlash,
+      alpha: 0,
+      duration: VIGNETTE_FLASH_DURATION,
+      ease: "Cubic.Out",
+    });
+  }
+
   private syncBanner(banner: TeamBanner | undefined, team: Fighter[]): void {
     if (!banner) {
       return;
@@ -603,10 +1531,193 @@ export class FightScene extends Phaser.Scene {
     const total = team.reduce((sum, fighter) => sum + fighter.maxHealth, 0);
     const current = team.reduce((sum, fighter) => sum + fighter.health, 0);
     const ratio = total === 0 ? 0 : current / total;
-    banner.fill.setSize(ratio * TEAM_BAR_WIDTH, TEAM_BAR_HEIGHT);
+    const newWidth = ratio * TEAM_BAR_WIDTH;
+
+    if (newWidth < banner.prevWidth) {
+      banner.drain.setSize(banner.prevWidth, TEAM_BAR_HEIGHT);
+      this.tweens.killTweensOf(banner.drain);
+      this.time.delayedCall(HP_DRAIN_DELAY, () => {
+        if (!this.sys.isActive()) return;
+        this.tweens.add({
+          targets: banner.drain,
+          width: newWidth,
+          duration: HP_DRAIN_DURATION,
+          ease: "Cubic.Out",
+        });
+      });
+    }
+
+    banner.prevWidth = newWidth;
+    banner.fill.setSize(newWidth, TEAM_BAR_HEIGHT);
   }
 
-  private updateLog(message: string): void {
-    this.log?.setText(message);
+  private showQTE(onComplete: (multiplier: number) => void): void {
+    const cx = GAME_WIDTH / 2;
+    const cy = GAME_HEIGHT / 2;
+    let elapsed = 0;
+    let completed = false;
+
+    const scrim = this.add
+      .rectangle(cx, cy, GAME_WIDTH, GAME_HEIGHT, 0x00_00_00)
+      .setAlpha(0.55)
+      .setDepth(QTE_DEPTH)
+      .setInteractive();
+
+    const panel = this.add
+      .rectangle(cx, cy, QTE_PANEL_W, QTE_PANEL_H, GAME_PALETTE.MAUVE)
+      .setDepth(QTE_DEPTH);
+
+    const title = this.add
+      .bitmapText(cx, cy - 16, GAME_BITMAP_FONT, "DEFEND!", 16)
+      .setOrigin(0.5)
+      .setDepth(QTE_DEPTH);
+
+    const barLeft = cx - QTE_BAR_W / 2;
+    this.add
+      .rectangle(cx, cy + 4, QTE_BAR_W, QTE_BAR_H, 0x00_00_00)
+      .setAlpha(0.4)
+      .setDepth(QTE_DEPTH);
+    const bar = this.add
+      .rectangle(barLeft, cy + 4, QTE_BAR_W, QTE_BAR_H, GAME_PALETTE.GREEN)
+      .setOrigin(0, 0.5)
+      .setDepth(QTE_DEPTH);
+
+    const hint = this.add
+      .bitmapText(cx, cy + 20, GAME_BITMAP_FONT, "PRESS SPACE", 8)
+      .setOrigin(0.5)
+      .setDepth(QTE_DEPTH);
+
+    const resultText = this.add
+      .bitmapText(cx, cy + 20, GAME_BITMAP_FONT, "", 8)
+      .setOrigin(0.5)
+      .setDepth(QTE_DEPTH + 1)
+      .setVisible(false);
+
+    const destroyAll = () => {
+      scrim.destroy();
+      panel.destroy();
+      title.destroy();
+      bar.destroy();
+      hint.destroy();
+      resultText.destroy();
+    };
+
+    const complete = (multiplier: number) => {
+      if (completed) return;
+      completed = true;
+      ticker.destroy();
+      keySpace?.destroy();
+
+      const label =
+        multiplier >= 1.8
+          ? "PERFECT!"
+          : multiplier >= 1.4
+            ? "GREAT!"
+            : multiplier >= 1.1
+              ? "GOOD"
+              : "TOO SLOW";
+      hint.setVisible(false);
+      resultText.setText(label).setVisible(true);
+
+      this.time.delayedCall(QTE_RESULT_HOLD_MS, () => {
+        if (!this.sys.isActive()) return;
+        destroyAll();
+        onComplete(multiplier);
+      });
+    };
+
+    const keySpace = this.input.keyboard?.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE,
+    );
+    keySpace?.on("down", () => {
+      complete(1 + Math.max(0, 1 - elapsed / QTE_DURATION_MS));
+    });
+    scrim.on("pointerdown", () => {
+      complete(1 + Math.max(0, 1 - elapsed / QTE_DURATION_MS));
+    });
+
+    const ticker = this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => {
+        if (!this.sys.isActive()) return;
+        elapsed += 16;
+        const ratio = Math.max(0, 1 - elapsed / QTE_DURATION_MS);
+        bar.setSize(ratio * QTE_BAR_W, QTE_BAR_H);
+        bar.setFillStyle(
+          ratio > 0.6
+            ? GAME_PALETTE.GREEN
+            : ratio > 0.3
+              ? GAME_PALETTE.ORANGE
+              : GAME_PALETTE.RED,
+        );
+        if (elapsed >= QTE_DURATION_MS) complete(1);
+      },
+    });
+  }
+
+  private showToast(message: string): void {
+    this.toastQueue.push(message);
+    if (!this.toastBusy) {
+      this.flushToastQueue();
+    }
+  }
+
+  private flushToastQueue(): void {
+    const message = this.toastQueue.shift();
+    if (message === undefined) {
+      this.toastBusy = false;
+      return;
+    }
+
+    this.toastBusy = true;
+    const holdMs = Math.max(
+      TOAST_HOLD_MIN_MS,
+      TOAST_HOLD_MS / (this.toastQueue.length + 1),
+    );
+
+    const text = this.add
+      .bitmapText(TOAST_PADDING_X, 0, GAME_BITMAP_FONT, message, FONT_BODY)
+      .setOrigin(0, 0.5)
+      .setMaxWidth(TOAST_MAX_W - TOAST_PADDING_X * 2);
+
+    const bgW =
+      Math.min(text.width, TOAST_MAX_W - TOAST_PADDING_X * 2) +
+      TOAST_PADDING_X * 2;
+    const bgH = text.height + TOAST_PADDING_Y * 2;
+
+    const bg = this.add
+      .rectangle(0, 0, bgW, bgH, GAME_PALETTE.MAUVE)
+      .setOrigin(0, 0.5);
+
+    const container = this.add
+      .container(TOAST_X, TOAST_ENTER_Y, [bg, text])
+      .setAlpha(0)
+      .setDepth(TOAST_DEPTH);
+
+    this.tweens.add({
+      targets: container,
+      alpha: 1,
+      y: TOAST_Y,
+      duration: TOAST_FADE_IN_MS,
+      ease: "Cubic.Out",
+      onComplete: () => {
+        if (!this.sys.isActive()) return;
+        this.time.delayedCall(holdMs, () => {
+          if (!this.sys.isActive()) return;
+          this.tweens.add({
+            targets: container,
+            alpha: 0,
+            y: TOAST_EXIT_Y,
+            duration: TOAST_FADE_OUT_MS,
+            ease: "Cubic.In",
+            onComplete: () => {
+              container.destroy();
+              this.flushToastQueue();
+            },
+          });
+        });
+      },
+    });
   }
 }

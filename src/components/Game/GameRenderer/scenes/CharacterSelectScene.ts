@@ -1,8 +1,10 @@
 import Phaser from "phaser";
 import type { CharacterResponse } from "@/services/api/schemas/character";
+import type { Session } from "@/services/game/schemas/game";
 import {
   GAME_HEIGHT,
   GAME_PALETTE,
+  GAME_WIDTH,
   MAX_ROSTER,
   MAX_STAT,
   TEXT_COLOR_NUMBER,
@@ -90,7 +92,9 @@ const STAT_LABELS: { key: keyof CharacterResponse["stats"]; label: string }[] =
 
 interface CardView {
   background: Phaser.GameObjects.Rectangle;
+  parts: Phaser.GameObjects.Rectangle[];
   avatar: Phaser.GameObjects.Image;
+  nameLabel: Phaser.GameObjects.BitmapText;
   badge: Phaser.GameObjects.Rectangle;
   order: Phaser.GameObjects.BitmapText;
   colorTween?: Phaser.Tweens.Tween;
@@ -111,6 +115,7 @@ export class CharacterSelectScene extends Phaser.Scene {
   private characters: CharacterResponse[] = [];
   private session?: SessionInfo;
   private selected: string[] = [];
+  private opponentRoster: string[] = [];
   private selectionLocked = false;
   private opponentReady = true;
   private awaitingOpponent = false;
@@ -118,13 +123,16 @@ export class CharacterSelectScene extends Phaser.Scene {
   private info?: InfoView;
   private status?: Phaser.GameObjects.BitmapText;
   private flightButton?: Phaser.GameObjects.Container;
+  private readySession?: Session;
   private unsubscribeSession?: () => void;
+  private unsubscribeCharacters?: () => void;
 
   constructor() {
     super(CHARACTER_SELECT_SCENE_KEY);
   }
 
   create(data: CharacterSelectSceneData): void {
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, GAME_PALETTE.PERIWINKLE);
     this.mode = data.mode;
     this.characters = data.characters;
     this.session = data.session;
@@ -167,11 +175,13 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.buildControls();
 
     if (this.mode === "multiplayer" && this.session?.gameService) {
-      this.unsubscribeSession = this.session.gameService.onSession(
-        (session) => {
-          if (session.state === "READY") {
-            this.onOpponentReady();
-          }
+      this.unsubscribeSession = this.session.gameService.onReady((session) => {
+        this.readySession = session;
+        this.onOpponentReady();
+      });
+      this.unsubscribeCharacters = this.session.gameService.onCharactersUpdated(
+        (characters) => {
+          this.opponentRoster = characters.map((c) => c.type);
         },
       );
     }
@@ -234,7 +244,14 @@ export class CharacterSelectScene extends Phaser.Scene {
       background.on("pointerover", () => this.updateInfo(character));
       background.on("pointerup", () => this.toggle(character));
 
-      this.cards.set(character.type, { background, avatar, badge, order });
+      this.cards.set(character.type, {
+        background,
+        parts: cardParts,
+        avatar,
+        nameLabel,
+        badge,
+        order,
+      });
 
       // Stagger entrance: each row arrives 90ms after the previous, columns
       // within a row fan in 20ms apart. Alpha-only (no y-offset) keeps the
@@ -368,11 +385,6 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.updateInfo(character);
     this.refresh();
 
-    if (this.selected.length === MAX_ROSTER && this.mode === "multiplayer") {
-      this.selectionLocked = true;
-      this.session?.gameService?.selectCharacters(this.selected);
-    }
-
     const selectionChanged =
       this.selected.includes(character.type) !== wasSelected;
     const card = this.cards.get(character.type);
@@ -475,6 +487,13 @@ export class CharacterSelectScene extends Phaser.Scene {
       return;
     }
 
+    this.hideUnselectedCards();
+
+    if (this.selected.length === MAX_ROSTER && this.mode === "multiplayer") {
+      this.selectionLocked = true;
+      this.session?.gameService?.selectCharacters(this.selected);
+    }
+
     if (!this.opponentReady) {
       // Opponent still picking — hold here until they lock in.
       this.awaitingOpponent = true;
@@ -483,6 +502,25 @@ export class CharacterSelectScene extends Phaser.Scene {
     }
 
     this.startFight();
+  }
+
+  private hideUnselectedCards(): void {
+    this.cards.forEach((card, id) => {
+      if (!this.selected.includes(id)) {
+        const targets = [
+          card.background,
+          ...card.parts,
+          card.avatar,
+          card.nameLabel,
+        ];
+        this.tweens.add({
+          targets,
+          alpha: 0,
+          duration: 250,
+          ease: "Sine.easeIn",
+        });
+      }
+    });
   }
 
   private onOpponentReady(): void {
@@ -497,11 +535,15 @@ export class CharacterSelectScene extends Phaser.Scene {
       mode: this.mode,
       characters: this.characters,
       roster: this.selected,
+      opponentRoster:
+        this.opponentRoster.length > 0 ? this.opponentRoster : undefined,
       session: this.session,
+      attackingPlayerId: this.readySession?.currentlyAttackingPlayerId,
     });
   }
 
   private cleanup(): void {
     this.unsubscribeSession?.();
+    this.unsubscribeCharacters?.();
   }
 }

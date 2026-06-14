@@ -3,16 +3,19 @@ import {
   characterStatsResponseSchema,
   characterTypeSchema,
 } from "@/services/api/schemas/character";
-import { sessionStateSchema } from "@/services/api/schemas/session";
+
+export const gameSessionStateSchema = z.string();
+
+export type GameSessionState = string;
 
 export const sessionSchema = z.object({
   id: z.string(),
-  state: sessionStateSchema,
+  state: gameSessionStateSchema,
   firstPlayerId: z.string(),
   secondPlayerId: z.string().nullable(),
   currentlyAttackingPlayerId: z.string().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
 });
 
 export type Session = z.infer<typeof sessionSchema>;

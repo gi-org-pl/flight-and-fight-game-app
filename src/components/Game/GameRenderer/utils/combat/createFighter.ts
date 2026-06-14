@@ -23,5 +23,6 @@ export const createFighter = (character: CharacterResponse): Fighter => {
     stats: character.stats,
     maxHealth,
     health: maxHealth,
+    superpowerLastUsedRound: 0,
   };
 };

@@ -16,6 +16,7 @@ export class WinnerScene extends Phaser.Scene {
 
   create(data: WinnerSceneData): void {
     this.cameras.main.fadeIn(350, 174, 158, 225);
+    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, GAME_PALETTE.PERIWINKLE);
     createBitmapText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2 - 30, "Winner", 18);
 
     createBitmapText(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, data.winner, 14);

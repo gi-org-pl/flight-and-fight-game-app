@@ -18,13 +18,14 @@ export interface GameService {
   disconnect: () => void;
   attack: () => void;
   defend: () => void;
-  selectCharacters: (characterIds: string[]) => void;
+  selectCharacters: (characters: string[]) => void;
   onSession: (handler: (session: Session) => void) => () => void;
   onAttacked: (handler: (payload: AttackedPayload) => void) => () => void;
   onCharactersUpdated: (
     handler: (characters: CharacterList) => void,
   ) => () => void;
   onTurnChanged: (handler: (session: Session) => void) => () => void;
+  onReady: (handler: (session: Session) => void) => () => void;
   onException: (handler: (error: Exception) => void) => () => void;
   onConnect: (handler: () => void) => () => void;
   onDisconnect: (handler: (reason: string) => void) => () => void;
@@ -48,8 +49,8 @@ export const createGameService = (
     disconnect: () => socket.disconnect(),
     attack: () => socket.emit("attack"),
     defend: () => socket.emit("defend"),
-    selectCharacters: (characterIds) =>
-      socket.emit("selectCharacters", characterIds),
+    selectCharacters: (characters) =>
+      socket.emit("selectCharacters", { characters }),
 
     onSession: (handler) => {
       const wrapped = (raw: unknown) => handler(sessionSchema.parse(raw));
@@ -91,6 +92,16 @@ export const createGameService = (
       return makeUnsubscribe(
         socket,
         "turnChanged",
+        wrapped as (...args: unknown[]) => void,
+      );
+    },
+
+    onReady: (handler) => {
+      const wrapped = (raw: unknown) => handler(sessionSchema.parse(raw));
+      socket.on("ready", wrapped as (payload: Session) => void);
+      return makeUnsubscribe(
+        socket,
+        "ready",
         wrapped as (...args: unknown[]) => void,
       );
     },

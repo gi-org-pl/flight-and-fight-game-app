@@ -23,7 +23,7 @@ const makeMockSocket = (): GameSocket => {
 
 const validSession = {
   id: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
-  state: "WAITING_FOR_SECOND_PLAYER" as const,
+  state: "OPEN" as const,
   firstPlayerId: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
   secondPlayerId: null,
   currentlyAttackingPlayerId: null,
@@ -79,10 +79,9 @@ describe("createGameService", () => {
     it("emits the selectCharacters event with the given ids", () => {
       const service = createGameService("p1", "s1");
       service.selectCharacters(["c1", "c2"]);
-      expect(mockSocket.emit).toHaveBeenCalledWith("selectCharacters", [
-        "c1",
-        "c2",
-      ]);
+      expect(mockSocket.emit).toHaveBeenCalledWith("selectCharacters", {
+        characters: ["c1", "c2"],
+      });
     });
   });
 
@@ -170,6 +169,35 @@ describe("createGameService", () => {
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({ id: validSession.id }),
         );
+      });
+    });
+  });
+
+  describe("onReady", () => {
+    describe("when a valid session payload is received", () => {
+      it("calls the handler with the parsed session", () => {
+        const service = createGameService("p1", "s1");
+        const handler = vi.fn();
+        service.onReady(handler);
+        const [, wrapped] = (
+          mockSocket.on as ReturnType<typeof vi.fn>
+        ).mock.calls.find((call) => call[0] === "ready") as [
+          string,
+          (...args: unknown[]) => void,
+        ];
+        wrapped({ ...validSession, state: "READY", currentlyAttackingPlayerId: "p1" });
+        expect(handler).toHaveBeenCalledWith(
+          expect.objectContaining({ state: "READY", currentlyAttackingPlayerId: "p1" }),
+        );
+      });
+    });
+
+    describe("when unsubscribe is called", () => {
+      it("calls socket.off with the same handler", () => {
+        const service = createGameService("p1", "s1");
+        const unsubscribe = service.onReady(vi.fn());
+        unsubscribe();
+        expect(mockSocket.off).toHaveBeenCalledWith("ready", expect.any(Function));
       });
     });
   });

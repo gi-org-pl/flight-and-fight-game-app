@@ -11,13 +11,14 @@ export interface ServerToClientEvents {
   attacked: (payload: AttackedPayload) => void;
   charactersUpdated: (payload: CharacterList) => void;
   turnChanged: (payload: Session) => void;
+  ready: (payload: Session) => void;
   exception: (payload: Exception) => void;
 }
 
 export interface ClientToServerEvents {
   attack: () => void;
   defend: () => void;
-  selectCharacters: (characterIds: string[]) => void;
+  selectCharacters: (payload: { characters: string[] }) => void;
 }
 
 export type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;

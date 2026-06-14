@@ -19,6 +19,7 @@ export const GAME_PALETTE = {
   ORCHID: toColorNumber(COLORS.ORCHID),
   LAVENDER: toColorNumber(COLORS.LAVENDER),
   PERIWINKLE: toColorNumber(COLORS.PERIWINKLE),
+  MAUVE: toColorNumber(COLORS.MAUVE),
   RED: toColorNumber(COLORS.RED),
   GREEN: toColorNumber(COLORS.GREEN),
   ORANGE: toColorNumber(COLORS.ORANGE),
