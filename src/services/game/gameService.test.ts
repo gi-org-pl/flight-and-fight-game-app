@@ -185,9 +185,16 @@ describe("createGameService", () => {
           string,
           (...args: unknown[]) => void,
         ];
-        wrapped({ ...validSession, state: "READY", currentlyAttackingPlayerId: "p1" });
+        wrapped({
+          ...validSession,
+          state: "READY",
+          currentlyAttackingPlayerId: "p1",
+        });
         expect(handler).toHaveBeenCalledWith(
-          expect.objectContaining({ state: "READY", currentlyAttackingPlayerId: "p1" }),
+          expect.objectContaining({
+            state: "READY",
+            currentlyAttackingPlayerId: "p1",
+          }),
         );
       });
     });
@@ -197,7 +204,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const unsubscribe = service.onReady(vi.fn());
         unsubscribe();
-        expect(mockSocket.off).toHaveBeenCalledWith("ready", expect.any(Function));
+        expect(mockSocket.off).toHaveBeenCalledWith(
+          "ready",
+          expect.any(Function),
+        );
       });
     });
   });

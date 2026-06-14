@@ -132,7 +132,13 @@ export class CharacterSelectScene extends Phaser.Scene {
   }
 
   create(data: CharacterSelectSceneData): void {
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, GAME_PALETTE.PERIWINKLE);
+    this.add.rectangle(
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      GAME_PALETTE.PERIWINKLE,
+    );
     this.mode = data.mode;
     this.characters = data.characters;
     this.session = data.session;

@@ -91,7 +91,13 @@ export class ConnectScene extends Phaser.Scene {
     this.playerId = undefined;
 
     this.cameras.main.fadeIn(350, 174, 158, 225);
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, GAME_PALETTE.PERIWINKLE);
+    this.add.rectangle(
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      GAME_PALETTE.PERIWINKLE,
+    );
     this.buildLayout();
     this.joinDebounced = debounce(
       (id: string) => this.attemptJoin(id),
