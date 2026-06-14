@@ -20,6 +20,7 @@ export const createFighter = (character: CharacterResponse): Fighter => {
   return {
     id: character.type,
     name: toDisplayName(character.type),
+    superpower: character.superpower,
     stats: character.stats,
     maxHealth,
     health: maxHealth,

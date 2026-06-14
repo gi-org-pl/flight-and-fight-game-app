@@ -16,12 +16,13 @@ import {
   MAX_ROSTER,
 } from "../GameRenderer.constants";
 import type { Fighter, FightSceneData, FightSide } from "../GameRenderer.types";
-import { avatarTextureKey } from "../utils/avatar/generateAvatar";
+import { spriteTextureKey } from "../utils/avatar/characterAssets";
 import { chooseEnemyTarget } from "../utils/combat/chooseEnemyTarget";
 import { computeDamage } from "../utils/combat/computeDamage";
 import { createEnemyRoster } from "../utils/combat/createEnemyRoster";
 import { createFighter } from "../utils/combat/createFighter";
 import { isAlive, isTeamDefeated } from "../utils/combat/nextAliveIndex";
+import { spawnSuperpowerEffect } from "../utils/combat/spawnSuperpowerEffect";
 import { wedgePositions } from "../utils/layout/wedgePositions";
 import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
@@ -49,6 +50,16 @@ const HP_BAR_HEIGHT = 4;
 const HP_BAR_OFFSET_Y = 22;
 const NAME_OFFSET_Y = 30;
 const FRAME_PADDING = 6;
+
+// --- Fighter highlight (halo ellipse behind sprite) -------------------------
+const HIGHLIGHT_OFFSET_Y = 3; // nudge down so the halo sits under the bird
+const HIGHLIGHT_H_RATIO = 0.72; // ellipse height relative to width (squashed shadow)
+const HIGHLIGHT_LEADER_ALPHA = 0.5;
+const HIGHLIGHT_TARGET_ALPHA_MIN = 0.28;
+const HIGHLIGHT_TARGET_ALPHA_MAX = 0.62;
+const HIGHLIGHT_PULSE_DURATION = 540; // ms per half-cycle
+const HIGHLIGHT_FADE_IN_MS = 280;
+const HIGHLIGHT_FADE_OUT_MS = 200;
 
 // --- Team HP banners (top corners) ------------------------------------------
 const TEAM_LABEL_Y = 10;
@@ -154,8 +165,10 @@ const PHASE_STEP = 2.399; // ≈ 2π/φ
 
 interface FighterView {
   container: Phaser.GameObjects.Container;
-  avatar: Phaser.GameObjects.Image;
-  frame: Phaser.GameObjects.Rectangle;
+  avatar: Phaser.GameObjects.Sprite;
+  frame: Phaser.GameObjects.Ellipse;
+  framePulseTween?: Phaser.Tweens.Tween;
+  frameState: "hidden" | "leader" | "target";
   hpFill: Phaser.GameObjects.Rectangle;
   hpDrain: Phaser.GameObjects.Rectangle;
   prevHealth: number;
@@ -213,9 +226,12 @@ export class FightScene extends Phaser.Scene {
   private prevShowYourTurn = false;
   private attackButton?: Phaser.GameObjects.Container;
   private superpowerButton?: Phaser.GameObjects.Container;
+  private prevSuperpowerReady = false;
+  private superpowerLastUsedRound = 0;
 
   private vignetteAmbient?: Phaser.GameObjects.Graphics;
   private vignetteFlash?: Phaser.GameObjects.Rectangle;
+  private superpowerFlash?: Phaser.GameObjects.Rectangle;
   private vignetteBaseAlpha = 0;
   private prevPlayerHpRatio = 1;
 
@@ -319,6 +335,8 @@ export class FightScene extends Phaser.Scene {
         : "player";
     this.round = 1;
     this.resolved = false;
+    this.superpowerLastUsedRound = 0;
+    this.prevSuperpowerReady = false;
     this.prevRoundDisplayed = 1;
     this.prevShowYourTurn = false;
   }
@@ -447,19 +465,32 @@ export class FightScene extends Phaser.Scene {
       const fallbackX = side === "player" ? 52 : GAME_WIDTH - 52;
       const pos = assignment.get(index) ?? { x: fallbackX, y: VS_Y };
 
+      const frameW = AVATAR_SIZE + FRAME_PADDING;
       const frame = this.add
-        .rectangle(
+        .ellipse(
           0,
-          0,
-          AVATAR_SIZE + FRAME_PADDING,
-          AVATAR_SIZE + FRAME_PADDING,
+          HIGHLIGHT_OFFSET_Y,
+          frameW,
+          frameW * HIGHLIGHT_H_RATIO,
           GAME_PALETTE.BLUSH,
         )
+        .setAlpha(0)
         .setVisible(false);
 
+      const animKey = spriteTextureKey(fighter.id);
+      const anim = this.anims.get(animKey);
+      const frameCount = anim?.frames.length ?? 1;
+      const baseRate = anim?.frameRate ?? 2;
+      // Each bird gets a ±25 % speed jitter and a random starting frame so
+      // the flock never flaps in perfect unison.
+      const frameRate = baseRate * (0.75 + Math.random() * 0.5);
+      const startFrame = Math.floor(Math.random() * frameCount);
+
       const avatar = this.add
-        .image(0, 0, avatarTextureKey(fighter.id))
-        .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE);
+        .sprite(0, 0, animKey)
+        .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE)
+        .play({ key: animKey, frameRate, startFrame, repeat: -1 })
+        .setFlipX(side === "enemy");
 
       const hpTrack = this.add
         .rectangle(0, HP_BAR_OFFSET_Y, HP_BAR_WIDTH, HP_BAR_HEIGHT, 0x00_00_00)
@@ -514,6 +545,7 @@ export class FightScene extends Phaser.Scene {
         targetY: pos.y,
         phase: index * PHASE_STEP,
         fallen: false,
+        frameState: "hidden",
       });
     }
   }
@@ -654,6 +686,7 @@ export class FightScene extends Phaser.Scene {
       attackerView,
       defenderView,
       "player",
+      () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
       () => {
         this.applyHit(attacker, defender);
         this.showToast(
@@ -691,9 +724,9 @@ export class FightScene extends Phaser.Scene {
     const attacker = this.playerTeam[leadIndex];
 
     const roundsSinceUsed =
-      attacker.superpowerLastUsedRound === 0
+      this.superpowerLastUsedRound === 0
         ? SUPERPOWER_COOLDOWN_ROUNDS
-        : attacker.superpowerLastUsedRound - this.round;
+        : this.round - this.superpowerLastUsedRound;
     if (roundsSinceUsed < SUPERPOWER_COOLDOWN_ROUNDS) {
       this.showToast(
         `[!] ${attacker.name} superpower ready in ${SUPERPOWER_COOLDOWN_ROUNDS - roundsSinceUsed} round(s)`,
@@ -711,8 +744,10 @@ export class FightScene extends Phaser.Scene {
       attackerView,
       defenderView,
       "player",
+      () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
       () => {
-        attacker.superpowerLastUsedRound = this.round;
+        this.flashSuperpower();
+        this.superpowerLastUsedRound = this.round;
         const base = computeDamage(attacker, defender);
         const superDamage = Math.max(5, Math.round(base * 2.5));
         defender.health = Math.max(0, defender.health - superDamage);
@@ -758,6 +793,7 @@ export class FightScene extends Phaser.Scene {
       attackerView,
       defenderView,
       "enemy",
+      () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
       () => {
         this.applyHit(attacker, defender);
         this.showToast(
@@ -884,14 +920,36 @@ export class FightScene extends Phaser.Scene {
       this.playerOrder[0] !== undefined
         ? this.playerTeam[this.playerOrder[0]]
         : undefined;
-    const superpowerReady =
+    const superpowerOffCooldown =
       leader !== undefined &&
-      (leader.superpowerLastUsedRound === 0 ||
-        leader.superpowerLastUsedRound - this.round <
-          SUPERPOWER_COOLDOWN_ROUNDS);
-    this.superpowerButton?.setAlpha(
-      canAttack && !this.gameService && superpowerReady ? 1 : 0.4,
-    );
+      !this.gameService &&
+      (this.superpowerLastUsedRound === 0 ||
+        this.round - this.superpowerLastUsedRound >= SUPERPOWER_COOLDOWN_ROUNDS);
+    if (this.superpowerButton) {
+      if (superpowerOffCooldown !== this.prevSuperpowerReady) {
+        this.prevSuperpowerReady = superpowerOffCooldown;
+        this.tweens.killTweensOf(this.superpowerButton);
+        if (superpowerOffCooldown) {
+          this.superpowerButton.setVisible(true).setAlpha(0);
+          this.tweens.add({
+            targets: this.superpowerButton,
+            alpha: canAttack ? 1 : 0.4,
+            duration: HIGHLIGHT_FADE_IN_MS,
+            ease: "Cubic.Out",
+          });
+        } else {
+          this.tweens.add({
+            targets: this.superpowerButton,
+            alpha: 0,
+            duration: HIGHLIGHT_FADE_OUT_MS,
+            ease: "Cubic.Out",
+            onComplete: () => { this.superpowerButton?.setVisible(false); },
+          });
+        }
+      } else if (superpowerOffCooldown) {
+        this.superpowerButton.setAlpha(canAttack ? 1 : 0.4);
+      }
+    }
 
     const playerTotal = this.playerTeam.reduce((s, f) => s + f.maxHealth, 0);
     const playerCurrent = this.playerTeam.reduce((s, f) => s + f.health, 0);
@@ -980,7 +1038,7 @@ export class FightScene extends Phaser.Scene {
         continue;
       }
 
-      const isLeader = index === leadIndex;
+      const isLeader = index === leadIndex && !isEnemy;
       const isTarget =
         isEnemy && this.selectedTarget === index && !this.resolved;
       const size = isLeader ? LEADER_AVATAR_SIZE : AVATAR_SIZE;
@@ -1007,10 +1065,65 @@ export class FightScene extends Phaser.Scene {
 
       view.prevHealth = fighter.health;
       view.hpFill.setVisible(true).setSize(newWidth, HP_BAR_HEIGHT);
+      const frameW = size + FRAME_PADDING;
       view.frame
-        .setVisible(isLeader || isTarget)
-        .setFillStyle(isTarget ? GAME_PALETTE.LAVENDER : GAME_PALETTE.BLUSH)
-        .setSize(size + FRAME_PADDING, size + FRAME_PADDING);
+        .setFillStyle(isTarget ? GAME_PALETTE.ROSE : GAME_PALETTE.ORANGE)
+        .setSize(frameW, frameW * HIGHLIGHT_H_RATIO);
+
+      const newFrameState: "hidden" | "leader" | "target" = isTarget
+        ? "target"
+        : isLeader
+          ? "leader"
+          : "hidden";
+
+      if (newFrameState !== view.frameState) {
+        view.frameState = newFrameState;
+
+        if (view.framePulseTween) {
+          view.framePulseTween.stop();
+          view.framePulseTween = undefined;
+        }
+        this.tweens.killTweensOf(view.frame);
+
+        if (newFrameState === "hidden") {
+          view.frame.setVisible(true);
+          this.tweens.add({
+            targets: view.frame,
+            alpha: 0,
+            duration: HIGHLIGHT_FADE_OUT_MS,
+            ease: "Cubic.Out",
+            onComplete: () => { view.frame.setVisible(false); },
+          });
+        } else if (newFrameState === "leader") {
+          view.frame.setVisible(true);
+          this.tweens.add({
+            targets: view.frame,
+            alpha: HIGHLIGHT_LEADER_ALPHA,
+            duration: HIGHLIGHT_FADE_IN_MS,
+            ease: "Cubic.Out",
+          });
+        } else {
+          // target: fade in then start pulse
+          view.frame.setVisible(true);
+          this.tweens.add({
+            targets: view.frame,
+            alpha: HIGHLIGHT_TARGET_ALPHA_MIN,
+            duration: HIGHLIGHT_FADE_IN_MS,
+            ease: "Cubic.Out",
+            onComplete: () => {
+              if (view.frameState !== "target") return;
+              view.framePulseTween = this.tweens.add({
+                targets: view.frame,
+                alpha: { from: HIGHLIGHT_TARGET_ALPHA_MIN, to: HIGHLIGHT_TARGET_ALPHA_MAX },
+                duration: HIGHLIGHT_PULSE_DURATION,
+                yoyo: true,
+                repeat: -1,
+                ease: "Sine.InOut",
+              });
+            },
+          });
+        }
+      }
 
       // Animate to the new slot when the intended destination changed.
       const target = assignment.get(index);
@@ -1035,6 +1148,7 @@ export class FightScene extends Phaser.Scene {
     attackerView: FighterView,
     defenderView: FighterView,
     attackerSide: FightSide,
+    onContact: () => void,
     onImpact: () => void,
     onComplete: () => void,
   ): void {
@@ -1043,6 +1157,7 @@ export class FightScene extends Phaser.Scene {
         attackerView,
         defenderView,
         attackerSide,
+        onContact,
         onImpact,
         onComplete,
       );
@@ -1118,6 +1233,7 @@ export class FightScene extends Phaser.Scene {
     attackerView: FighterView,
     defenderView: FighterView,
     attackerSide: FightSide,
+    onContact: () => void,
     onImpact: () => void,
     onComplete: () => void,
   ): void {
@@ -1147,6 +1263,9 @@ export class FightScene extends Phaser.Scene {
         if (!this.sys.isActive()) return;
 
         // --- Phase 4: Strike — attacker blasts past the centre line. ---
+        // Fire the visual contact effect now: defender is still at defX
+        // (not yet knocked back), which is the true point of contact.
+        onContact();
         this.tweens.add({
           targets: attackerView,
           anchorX: defX - dir * CLASH_LUNGE_OVERSHOOT,
@@ -1212,7 +1331,10 @@ export class FightScene extends Phaser.Scene {
                 onComplete: () => {
                   if (!this.sys.isActive()) return;
 
-                  // --- Phase 7: Straighten — angles return to 0. ---
+                  // --- Phase 7: Straighten — angles return to 0.
+                  // onComplete fires here so formation repositioning and
+                  // angle-straightening happen concurrently — fighters glide
+                  // home while their posture resets simultaneously.
                   this.tweens.add({
                     targets: attackerView.container,
                     angle: 0,
@@ -1225,7 +1347,6 @@ export class FightScene extends Phaser.Scene {
                     duration: CLASH_RETURN_DURATION,
                     ease: "Cubic.Out",
                   });
-
                   onComplete();
                 },
               });
@@ -1336,6 +1457,7 @@ export class FightScene extends Phaser.Scene {
           this.playerViews[leadIndex],
           this.enemyViews[targetIndex],
           "player",
+          () => spawnSuperpowerEffect(this, this.enemyViews[targetIndex].anchorX, this.enemyViews[targetIndex].anchorY, attacker.superpower),
           () => {
             this.applyHit(attacker, defender);
             this.showToast(
@@ -1400,6 +1522,7 @@ export class FightScene extends Phaser.Scene {
             attackerView,
             defenderView,
             "enemy",
+            () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
             () => {
               this.showToast(`[X] ${attacker.name} -> ${defender.name}!`);
             },
@@ -1515,6 +1638,17 @@ export class FightScene extends Phaser.Scene {
       )
       .setAlpha(0)
       .setDepth(15);
+
+    this.superpowerFlash = this.add
+      .rectangle(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2,
+        GAME_WIDTH,
+        GAME_HEIGHT,
+        0xff_ee_44,
+      )
+      .setAlpha(0)
+      .setDepth(15);
   }
 
   private applyVignetteAmbient(time: number): void {
@@ -1537,6 +1671,18 @@ export class FightScene extends Phaser.Scene {
     this.vignetteFlash.setAlpha(VIGNETTE_FLASH_ALPHA);
     this.tweens.add({
       targets: this.vignetteFlash,
+      alpha: 0,
+      duration: VIGNETTE_FLASH_DURATION,
+      ease: "Cubic.Out",
+    });
+  }
+
+  private flashSuperpower(): void {
+    if (!this.superpowerFlash) return;
+    this.tweens.killTweensOf(this.superpowerFlash);
+    this.superpowerFlash.setAlpha(0.52);
+    this.tweens.add({
+      targets: this.superpowerFlash,
       alpha: 0,
       duration: VIGNETTE_FLASH_DURATION,
       ease: "Cubic.Out",

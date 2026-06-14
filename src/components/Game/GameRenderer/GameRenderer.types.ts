@@ -1,6 +1,7 @@
 import type {
   CharacterResponse,
   CharacterStatsResponse,
+  Superpower,
 } from "@/services/api/schemas/character";
 import type { GameService } from "@/services/game/gameService";
 
@@ -60,6 +61,7 @@ export type FightSide = "player" | "enemy";
 export interface Fighter {
   id: string;
   name: string;
+  superpower: Superpower;
   stats: CharacterStatsResponse;
   maxHealth: number;
   health: number;

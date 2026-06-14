@@ -2,7 +2,10 @@ import Phaser from "phaser";
 import homeBg from "@/assets/images/home/main-bg.png?url";
 import { getCharacters } from "@/services/api/characters";
 import { GAME_FONT, HOME_BG_KEY } from "../GameRenderer.constants";
-import { generateAvatarTextures } from "../utils/avatar/generateAvatar";
+import {
+  loadAvatarAssets,
+  loadSpriteAnimations,
+} from "../utils/avatar/characterAssets";
 import { readJoinId } from "../utils/connect/readJoinId";
 import { generateBitmapFont } from "../utils/text/generateBitmapFont";
 import {
@@ -18,6 +21,7 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     this.load.image(HOME_BG_KEY, homeBg);
+    loadAvatarAssets(this);
   }
 
   // Bake the bitmap font from the web font before any scene renders text, then
@@ -39,9 +43,13 @@ export class BootScene extends Phaser.Scene {
 
     generateBitmapFont(this);
 
-    const characters = await getCharacters();
+    await loadSpriteAnimations(this);
 
-    generateAvatarTextures(this, characters);
+    if (!this.sys.isActive()) {
+      return;
+    }
+
+    const characters = await getCharacters();
 
     // A `?join_id=` deep link (e.g. a scanned share QR) skips the menu and drops
     // straight into the connect scene to auto-join that session.

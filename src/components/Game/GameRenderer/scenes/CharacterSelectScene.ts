@@ -1,6 +1,9 @@
-import Phaser from "phaser";
-import type { CharacterResponse } from "@/services/api/schemas/character";
-import type { Session } from "@/services/game/schemas/game";
+import type {
+  CharacterResponse,
+  Superpower,
+} from '@/services/api/schemas/character';
+import type { Session } from '@/services/game/schemas/game';
+import Phaser from 'phaser';
 import {
   GAME_HEIGHT,
   GAME_PALETTE,
@@ -8,23 +11,26 @@ import {
   MAX_ROSTER,
   MAX_STAT,
   TEXT_COLOR_NUMBER,
-} from "../GameRenderer.constants";
+} from '../GameRenderer.constants';
 import type {
   CharacterSelectSceneData,
   SessionInfo,
-} from "../GameRenderer.types";
-import { avatarTextureKey } from "../utils/avatar/generateAvatar";
-import { toDisplayName } from "../utils/character/toDisplayName";
-import { darkenColor } from "../utils/color/darkenColor";
-import { toggleSelection } from "../utils/selection/toggleSelection";
-import { createBitmapText } from "../utils/text/createBitmapText";
-import { createButton } from "../utils/widgets/createButton";
-import { createPanel } from "../utils/widgets/createPanel";
+} from '../GameRenderer.types';
+import {
+  AVATAR_BG_KEY,
+  avatarTextureKey,
+} from '../utils/avatar/characterAssets';
+import { toDisplayName } from '../utils/character/toDisplayName';
+import { darkenColor } from '../utils/color/darkenColor';
+import { toggleSelection } from '../utils/selection/toggleSelection';
+import { createBitmapText } from '../utils/text/createBitmapText';
+import { createButton } from '../utils/widgets/createButton';
+import { createPanel } from '../utils/widgets/createPanel';
 import {
   CHARACTER_SELECT_SCENE_KEY,
   FIGHT_SCENE_KEY,
   START_SCENE_KEY,
-} from "./sceneKeys";
+} from './sceneKeys';
 
 // The bitmap font is baked at 16px (NATIVE_PX) from Press Start 2P — itself an
 // 8px-grid face. Only 16 and 8 land on a clean integer downscale of the atlas;
@@ -82,17 +88,38 @@ const GRID_BLOCK_HEIGHT = 2 * CELL_HEIGHT + GRID_GAP_Y;
 const GRID_TOP =
   INFO_TOP + (INFO_HEIGHT - GRID_BLOCK_HEIGHT) / 2 + CELL_HEIGHT / 2;
 
-const STAT_LABELS: { key: keyof CharacterResponse["stats"]; label: string }[] =
+const SUPERPOWER_COLOR: Record<Superpower, number> = {
+  LIGHT: 0xff_ff_aa,
+  DARK: 0xcc_55_ff,
+  FIRE: 0xff_77_00,
+  WATER: 0x44_aa_ff,
+  GRASS: 0x44_cc_44,
+  ELECTRIC: 0xff_ee_44,
+  ICE: 0xaa_ee_ff,
+  GROUND: 0xcc_aa_55,
+  AIR: 0xcc_ee_ff,
+};
+
+// Y of the superpower row: sits below the last stat row with a small gap.
+const SUPERPOWER_LABEL_Y =
+  STAT_FIRST_ROW_Y +
+  (4 /* STAT_LABELS.length */ - 1) * STAT_ROW_GAP +
+  STAT_ROW_GAP +
+  8;
+const SUPERPOWER_VALUE_Y = SUPERPOWER_LABEL_Y + 12;
+
+const STAT_LABELS: { key: keyof CharacterResponse['stats']; label: string }[] =
   [
-    { key: "health", label: "HP" },
-    { key: "power", label: "PWR" },
-    { key: "intelligence", label: "INT" },
-    { key: "defense", label: "DEF" },
+    { key: 'health', label: 'HP' },
+    { key: 'power', label: 'PWR' },
+    { key: 'intelligence', label: 'INT' },
+    { key: 'defense', label: 'DEF' },
   ];
 
 interface CardView {
   background: Phaser.GameObjects.Rectangle;
   parts: Phaser.GameObjects.Rectangle[];
+  avatarBg: Phaser.GameObjects.Image;
   avatar: Phaser.GameObjects.Image;
   nameLabel: Phaser.GameObjects.BitmapText;
   badge: Phaser.GameObjects.Rectangle;
@@ -101,6 +128,7 @@ interface CardView {
 }
 
 interface InfoView {
+  avatarBg: Phaser.GameObjects.Image;
   avatar: Phaser.GameObjects.Image;
   name: Phaser.GameObjects.BitmapText;
   placeholder: Phaser.GameObjects.BitmapText;
@@ -108,10 +136,12 @@ interface InfoView {
   tracks: Phaser.GameObjects.Rectangle[];
   bars: Phaser.GameObjects.Rectangle[];
   values: Phaser.GameObjects.BitmapText[];
+  superpowerLabel: Phaser.GameObjects.BitmapText;
+  superpowerValue: Phaser.GameObjects.BitmapText;
 }
 
 export class CharacterSelectScene extends Phaser.Scene {
-  private mode: CharacterSelectSceneData["mode"] = "single";
+  private mode: CharacterSelectSceneData['mode'] = 'single';
   private characters: CharacterResponse[] = [];
   private session?: SessionInfo;
   private selected: string[] = [];
@@ -146,7 +176,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.selectionLocked = false;
     this.awaitingOpponent = false;
     // Single-player has no opponent to wait on, so it starts ready.
-    this.opponentReady = data.mode === "single";
+    this.opponentReady = data.mode === 'single';
     this.cards = new Map();
 
     this.cameras.main.fadeIn(350, 174, 158, 225);
@@ -167,7 +197,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       GRID_LEFT,
       36,
-      "Pick order sets your fight sequence",
+      'Pick order sets your fight sequence',
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     )
@@ -180,7 +210,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.buildInfoPanel();
     this.buildControls();
 
-    if (this.mode === "multiplayer" && this.session?.gameService) {
+    if (this.mode === 'multiplayer' && this.session?.gameService) {
       this.unsubscribeSession = this.session.gameService.onReady((session) => {
         this.readySession = session;
         this.onOpponentReady();
@@ -214,7 +244,9 @@ export class CharacterSelectScene extends Phaser.Scene {
       );
       background.setInteractive({ useHandCursor: true });
 
-      // Generated placeholder avatar standing in for real character art.
+      const avatarBg = this.add
+        .image(x, y + AVATAR_OFFSET_Y, AVATAR_BG_KEY)
+        .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE);
       const avatar = this.add
         .image(x, y + AVATAR_OFFSET_Y, avatarTextureKey(character.type))
         .setDisplaySize(AVATAR_SIZE, AVATAR_SIZE);
@@ -243,16 +275,17 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         badgeX,
         badgeY,
-        "",
+        '',
         FONT_BODY,
       ).setVisible(false);
 
-      background.on("pointerover", () => this.updateInfo(character));
-      background.on("pointerup", () => this.toggle(character));
+      background.on('pointerover', () => this.updateInfo(character));
+      background.on('pointerup', () => this.toggle(character));
 
       this.cards.set(character.type, {
         background,
         parts: cardParts,
+        avatarBg,
         avatar,
         nameLabel,
         badge,
@@ -264,13 +297,14 @@ export class CharacterSelectScene extends Phaser.Scene {
       // bevel strips — which are separate scene objects — in sync.
       const staggerDelay = row * 90 + (index % COLUMNS) * 20 + 250;
       for (const part of cardParts) part.setAlpha(0);
+      avatarBg.setAlpha(0);
       avatar.setAlpha(0);
       nameLabel.setAlpha(0);
       this.tweens.add({
-        targets: [...cardParts, avatar, nameLabel],
+        targets: [...cardParts, avatarBg, avatar, nameLabel],
         alpha: 1,
         duration: 300,
-        ease: "Sine.easeOut",
+        ease: 'Sine.easeOut',
         delay: staggerDelay,
       });
     });
@@ -290,7 +324,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       INFO_TOP + 14,
-      "FIGHTER",
+      'FIGHTER',
       FONT_BODY,
     ).setAlpha(0.5);
 
@@ -298,20 +332,24 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       centerY,
-      "Hover a\nfighter\nto see\nstats",
+      'Hover a\nfighter\nto see\nstats',
       FONT_HEADER,
       GAME_PALETTE.LAVENDER,
     ).setCenterAlign();
 
+    const avatarBg = this.add
+      .image(INFO_AVATAR_X, INFO_AVATAR_Y, AVATAR_BG_KEY)
+      .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
+      .setVisible(false);
     const avatar = this.add
-      .image(INFO_AVATAR_X, INFO_AVATAR_Y, "")
+      .image(INFO_AVATAR_X, INFO_AVATAR_Y, '')
       .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(false);
     const name = createBitmapText(
       this,
       INFO_NAME_X,
       INFO_NAME_Y,
-      "",
+      '',
       FONT_HEADER,
     ).setVisible(false);
 
@@ -346,7 +384,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         STAT_VALUE_X,
         rowY,
-        "",
+        '',
         FONT_BODY,
       ).setVisible(false);
       statLabels.push(statLabel);
@@ -355,7 +393,40 @@ export class CharacterSelectScene extends Phaser.Scene {
       values.push(value);
     });
 
-    this.info = { avatar, name, placeholder, statLabels, tracks, bars, values };
+    const superpowerLabel = createBitmapText(
+      this,
+      INFO_X,
+      SUPERPOWER_LABEL_Y,
+      'TYPE',
+      FONT_BODY,
+      GAME_PALETTE.LAVENDER,
+    )
+      .setCenterAlign()
+      .setAlpha(0.5)
+      .setVisible(false);
+
+    const superpowerValue = createBitmapText(
+      this,
+      INFO_X,
+      SUPERPOWER_VALUE_Y,
+      '',
+      FONT_BODY,
+    )
+      .setCenterAlign()
+      .setVisible(false);
+
+    this.info = {
+      avatarBg,
+      avatar,
+      name,
+      placeholder,
+      statLabels,
+      tracks,
+      bars,
+      values,
+      superpowerLabel,
+      superpowerValue,
+    };
   }
 
   private buildControls(): void {
@@ -363,18 +434,18 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     // Status sits on the left; the actions group to the right so the bottom
     // strip reads "info | actions" and has room to breathe.
-    createButton(this, GRID_LEFT + 42, rowY, "Leave", {
+    createButton(this, GRID_LEFT + 42, rowY, 'Leave', {
       width: 84,
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });
 
-    this.status = createBitmapText(this, 206, rowY, "", FONT_BODY).setOrigin(
+    this.status = createBitmapText(this, 206, rowY, '', FONT_BODY).setOrigin(
       0.5,
       0.5,
     );
 
-    this.flightButton = createButton(this, 388, rowY, "Flight or Fight", {
+    this.flightButton = createButton(this, 388, rowY, 'Flight or Fight', {
       width: 160,
       fill: GAME_PALETTE.ROSE,
       onClick: () => this.confirm(),
@@ -407,7 +478,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         from: 0,
         to: 100,
         duration: 220,
-        ease: "Sine.easeOut",
+        ease: 'Sine.easeOut',
         onUpdate: (tween) => {
           const c = Phaser.Display.Color.Interpolate.ColorWithColor(
             fromColor,
@@ -429,11 +500,18 @@ export class CharacterSelectScene extends Phaser.Scene {
     }
 
     this.info.placeholder.setVisible(false);
+    this.info.avatarBg.setVisible(true);
     this.info.avatar
       .setTexture(avatarTextureKey(character.type))
       .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(true);
     this.info.name.setVisible(true).setText(toDisplayName(character.type));
+
+    this.info.superpowerLabel.setVisible(true);
+    this.info.superpowerValue
+      .setVisible(true)
+      .setText(character.superpower)
+      .setTint(SUPERPOWER_COLOR[character.superpower]);
 
     STAT_LABELS.forEach(({ key }, index) => {
       const value = character.stats[key];
@@ -448,7 +526,7 @@ export class CharacterSelectScene extends Phaser.Scene {
           targets: bar,
           width: (value / MAX_STAT) * STAT_BAR_MAX_WIDTH,
           duration: 280,
-          ease: "Cubic.easeOut",
+          ease: 'Cubic.easeOut',
           delay: index * 35,
         });
       }
@@ -473,7 +551,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const ready = this.selected.length === MAX_ROSTER;
 
     if (this.awaitingOpponent) {
-      this.status?.setText("Waiting for opponent...");
+      this.status?.setText('Waiting for opponent...');
       this.flightButton?.setAlpha(0.4);
       return;
     }
@@ -481,7 +559,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.status
       ?.setText(
         ready
-          ? "Roster locked!"
+          ? 'Roster locked!'
           : `Selected ${this.selected.length}/${MAX_ROSTER}`,
       )
       .setTint(ready ? TEXT_COLOR_NUMBER : GAME_PALETTE.RED);
@@ -495,7 +573,7 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     this.hideUnselectedCards();
 
-    if (this.selected.length === MAX_ROSTER && this.mode === "multiplayer") {
+    if (this.selected.length === MAX_ROSTER && this.mode === 'multiplayer') {
       this.selectionLocked = true;
       this.session?.gameService?.selectCharacters(this.selected);
     }
@@ -516,6 +594,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         const targets = [
           card.background,
           ...card.parts,
+          card.avatarBg,
           card.avatar,
           card.nameLabel,
         ];
@@ -523,7 +602,7 @@ export class CharacterSelectScene extends Phaser.Scene {
           targets,
           alpha: 0,
           duration: 250,
-          ease: "Sine.easeIn",
+          ease: 'Sine.easeIn',
         });
       }
     });
