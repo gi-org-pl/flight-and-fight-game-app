@@ -1,9 +1,9 @@
+import Phaser from "phaser";
 import type {
   CharacterResponse,
   Superpower,
-} from '@/services/api/schemas/character';
-import type { Session } from '@/services/game/schemas/game';
-import Phaser from 'phaser';
+} from "@/services/api/schemas/character";
+import type { Session } from "@/services/game/schemas/game";
 import {
   GAME_HEIGHT,
   GAME_PALETTE,
@@ -11,26 +11,26 @@ import {
   MAX_ROSTER,
   MAX_STAT,
   TEXT_COLOR_NUMBER,
-} from '../GameRenderer.constants';
+} from "../GameRenderer.constants";
 import type {
   CharacterSelectSceneData,
   SessionInfo,
-} from '../GameRenderer.types';
+} from "../GameRenderer.types";
 import {
   AVATAR_BG_KEY,
   avatarTextureKey,
-} from '../utils/avatar/characterAssets';
-import { toDisplayName } from '../utils/character/toDisplayName';
-import { darkenColor } from '../utils/color/darkenColor';
-import { toggleSelection } from '../utils/selection/toggleSelection';
-import { createBitmapText } from '../utils/text/createBitmapText';
-import { createButton } from '../utils/widgets/createButton';
-import { createPanel } from '../utils/widgets/createPanel';
+} from "../utils/avatar/characterAssets";
+import { toDisplayName } from "../utils/character/toDisplayName";
+import { darkenColor } from "../utils/color/darkenColor";
+import { toggleSelection } from "../utils/selection/toggleSelection";
+import { createBitmapText } from "../utils/text/createBitmapText";
+import { createButton } from "../utils/widgets/createButton";
+import { createPanel } from "../utils/widgets/createPanel";
 import {
   CHARACTER_SELECT_SCENE_KEY,
   FIGHT_SCENE_KEY,
   START_SCENE_KEY,
-} from './sceneKeys';
+} from "./sceneKeys";
 
 // The bitmap font is baked at 16px (NATIVE_PX) from Press Start 2P — itself an
 // 8px-grid face. Only 16 and 8 land on a clean integer downscale of the atlas;
@@ -108,12 +108,12 @@ const SUPERPOWER_LABEL_Y =
   8;
 const SUPERPOWER_VALUE_Y = SUPERPOWER_LABEL_Y + 12;
 
-const STAT_LABELS: { key: keyof CharacterResponse['stats']; label: string }[] =
+const STAT_LABELS: { key: keyof CharacterResponse["stats"]; label: string }[] =
   [
-    { key: 'health', label: 'HP' },
-    { key: 'power', label: 'PWR' },
-    { key: 'intelligence', label: 'INT' },
-    { key: 'defense', label: 'DEF' },
+    { key: "health", label: "HP" },
+    { key: "power", label: "PWR" },
+    { key: "intelligence", label: "INT" },
+    { key: "defense", label: "DEF" },
   ];
 
 interface CardView {
@@ -141,7 +141,7 @@ interface InfoView {
 }
 
 export class CharacterSelectScene extends Phaser.Scene {
-  private mode: CharacterSelectSceneData['mode'] = 'single';
+  private mode: CharacterSelectSceneData["mode"] = "single";
   private characters: CharacterResponse[] = [];
   private session?: SessionInfo;
   private selected: string[] = [];
@@ -176,7 +176,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.selectionLocked = false;
     this.awaitingOpponent = false;
     // Single-player has no opponent to wait on, so it starts ready.
-    this.opponentReady = data.mode === 'single';
+    this.opponentReady = data.mode === "single";
     this.cards = new Map();
 
     this.cameras.main.fadeIn(350, 174, 158, 225);
@@ -197,7 +197,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       GRID_LEFT,
       36,
-      'Pick order sets your fight sequence',
+      "Pick order sets your fight sequence",
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     )
@@ -210,7 +210,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.buildInfoPanel();
     this.buildControls();
 
-    if (this.mode === 'multiplayer' && this.session?.gameService) {
+    if (this.mode === "multiplayer" && this.session?.gameService) {
       this.unsubscribeSession = this.session.gameService.onReady((session) => {
         this.readySession = session;
         this.onOpponentReady();
@@ -275,12 +275,12 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         badgeX,
         badgeY,
-        '',
+        "",
         FONT_BODY,
       ).setVisible(false);
 
-      background.on('pointerover', () => this.updateInfo(character));
-      background.on('pointerup', () => this.toggle(character));
+      background.on("pointerover", () => this.updateInfo(character));
+      background.on("pointerup", () => this.toggle(character));
 
       this.cards.set(character.type, {
         background,
@@ -304,7 +304,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         targets: [...cardParts, avatarBg, avatar, nameLabel],
         alpha: 1,
         duration: 300,
-        ease: 'Sine.easeOut',
+        ease: "Sine.easeOut",
         delay: staggerDelay,
       });
     });
@@ -324,7 +324,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       INFO_TOP + 14,
-      'FIGHTER',
+      "FIGHTER",
       FONT_BODY,
     ).setAlpha(0.5);
 
@@ -332,7 +332,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       centerY,
-      'Hover a\nfighter\nto see\nstats',
+      "Hover a\nfighter\nto see\nstats",
       FONT_HEADER,
       GAME_PALETTE.LAVENDER,
     ).setCenterAlign();
@@ -342,14 +342,14 @@ export class CharacterSelectScene extends Phaser.Scene {
       .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(false);
     const avatar = this.add
-      .image(INFO_AVATAR_X, INFO_AVATAR_Y, '')
+      .image(INFO_AVATAR_X, INFO_AVATAR_Y, "")
       .setDisplaySize(INFO_AVATAR_SIZE, INFO_AVATAR_SIZE)
       .setVisible(false);
     const name = createBitmapText(
       this,
       INFO_NAME_X,
       INFO_NAME_Y,
-      '',
+      "",
       FONT_HEADER,
     ).setVisible(false);
 
@@ -384,7 +384,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         this,
         STAT_VALUE_X,
         rowY,
-        '',
+        "",
         FONT_BODY,
       ).setVisible(false);
       statLabels.push(statLabel);
@@ -397,7 +397,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       SUPERPOWER_LABEL_Y,
-      'TYPE',
+      "TYPE",
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     )
@@ -409,7 +409,7 @@ export class CharacterSelectScene extends Phaser.Scene {
       this,
       INFO_X,
       SUPERPOWER_VALUE_Y,
-      '',
+      "",
       FONT_BODY,
     )
       .setCenterAlign()
@@ -434,18 +434,18 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     // Status sits on the left; the actions group to the right so the bottom
     // strip reads "info | actions" and has room to breathe.
-    createButton(this, GRID_LEFT + 42, rowY, 'Leave', {
+    createButton(this, GRID_LEFT + 42, rowY, "Leave", {
       width: 84,
       fill: GAME_PALETTE.ORCHID,
       onClick: () => this.scene.start(START_SCENE_KEY),
     });
 
-    this.status = createBitmapText(this, 206, rowY, '', FONT_BODY).setOrigin(
+    this.status = createBitmapText(this, 206, rowY, "", FONT_BODY).setOrigin(
       0.5,
       0.5,
     );
 
-    this.flightButton = createButton(this, 388, rowY, 'Flight or Fight', {
+    this.flightButton = createButton(this, 388, rowY, "Flight or Fight", {
       width: 160,
       fill: GAME_PALETTE.ROSE,
       onClick: () => this.confirm(),
@@ -478,7 +478,7 @@ export class CharacterSelectScene extends Phaser.Scene {
         from: 0,
         to: 100,
         duration: 220,
-        ease: 'Sine.easeOut',
+        ease: "Sine.easeOut",
         onUpdate: (tween) => {
           const c = Phaser.Display.Color.Interpolate.ColorWithColor(
             fromColor,
@@ -526,7 +526,7 @@ export class CharacterSelectScene extends Phaser.Scene {
           targets: bar,
           width: (value / MAX_STAT) * STAT_BAR_MAX_WIDTH,
           duration: 280,
-          ease: 'Cubic.easeOut',
+          ease: "Cubic.easeOut",
           delay: index * 35,
         });
       }
@@ -551,7 +551,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const ready = this.selected.length === MAX_ROSTER;
 
     if (this.awaitingOpponent) {
-      this.status?.setText('Waiting for opponent...');
+      this.status?.setText("Waiting for opponent...");
       this.flightButton?.setAlpha(0.4);
       return;
     }
@@ -559,7 +559,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     this.status
       ?.setText(
         ready
-          ? 'Roster locked!'
+          ? "Roster locked!"
           : `Selected ${this.selected.length}/${MAX_ROSTER}`,
       )
       .setTint(ready ? TEXT_COLOR_NUMBER : GAME_PALETTE.RED);
@@ -573,7 +573,7 @@ export class CharacterSelectScene extends Phaser.Scene {
 
     this.hideUnselectedCards();
 
-    if (this.selected.length === MAX_ROSTER && this.mode === 'multiplayer') {
+    if (this.selected.length === MAX_ROSTER && this.mode === "multiplayer") {
       this.selectionLocked = true;
       this.session?.gameService?.selectCharacters(this.selected);
     }
@@ -602,7 +602,7 @@ export class CharacterSelectScene extends Phaser.Scene {
           targets,
           alpha: 0,
           duration: 250,
-          ease: 'Sine.easeIn',
+          ease: "Sine.easeIn",
         });
       }
     });

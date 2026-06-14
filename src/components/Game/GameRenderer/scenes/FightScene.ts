@@ -686,7 +686,13 @@ export class FightScene extends Phaser.Scene {
       attackerView,
       defenderView,
       "player",
-      () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
+      () =>
+        spawnSuperpowerEffect(
+          this,
+          defenderView.anchorX,
+          defenderView.anchorY,
+          attacker.superpower,
+        ),
       () => {
         this.applyHit(attacker, defender);
         this.showToast(
@@ -744,7 +750,13 @@ export class FightScene extends Phaser.Scene {
       attackerView,
       defenderView,
       "player",
-      () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
+      () =>
+        spawnSuperpowerEffect(
+          this,
+          defenderView.anchorX,
+          defenderView.anchorY,
+          attacker.superpower,
+        ),
       () => {
         this.flashSuperpower();
         this.superpowerLastUsedRound = this.round;
@@ -793,7 +805,13 @@ export class FightScene extends Phaser.Scene {
       attackerView,
       defenderView,
       "enemy",
-      () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
+      () =>
+        spawnSuperpowerEffect(
+          this,
+          defenderView.anchorX,
+          defenderView.anchorY,
+          attacker.superpower,
+        ),
       () => {
         this.applyHit(attacker, defender);
         this.showToast(
@@ -924,7 +942,8 @@ export class FightScene extends Phaser.Scene {
       leader !== undefined &&
       !this.gameService &&
       (this.superpowerLastUsedRound === 0 ||
-        this.round - this.superpowerLastUsedRound >= SUPERPOWER_COOLDOWN_ROUNDS);
+        this.round - this.superpowerLastUsedRound >=
+          SUPERPOWER_COOLDOWN_ROUNDS);
     if (this.superpowerButton) {
       if (superpowerOffCooldown !== this.prevSuperpowerReady) {
         this.prevSuperpowerReady = superpowerOffCooldown;
@@ -943,7 +962,9 @@ export class FightScene extends Phaser.Scene {
             alpha: 0,
             duration: HIGHLIGHT_FADE_OUT_MS,
             ease: "Cubic.Out",
-            onComplete: () => { this.superpowerButton?.setVisible(false); },
+            onComplete: () => {
+              this.superpowerButton?.setVisible(false);
+            },
           });
         }
       } else if (superpowerOffCooldown) {
@@ -1092,7 +1113,9 @@ export class FightScene extends Phaser.Scene {
             alpha: 0,
             duration: HIGHLIGHT_FADE_OUT_MS,
             ease: "Cubic.Out",
-            onComplete: () => { view.frame.setVisible(false); },
+            onComplete: () => {
+              view.frame.setVisible(false);
+            },
           });
         } else if (newFrameState === "leader") {
           view.frame.setVisible(true);
@@ -1114,7 +1137,10 @@ export class FightScene extends Phaser.Scene {
               if (view.frameState !== "target") return;
               view.framePulseTween = this.tweens.add({
                 targets: view.frame,
-                alpha: { from: HIGHLIGHT_TARGET_ALPHA_MIN, to: HIGHLIGHT_TARGET_ALPHA_MAX },
+                alpha: {
+                  from: HIGHLIGHT_TARGET_ALPHA_MIN,
+                  to: HIGHLIGHT_TARGET_ALPHA_MAX,
+                },
                 duration: HIGHLIGHT_PULSE_DURATION,
                 yoyo: true,
                 repeat: -1,
@@ -1457,7 +1483,13 @@ export class FightScene extends Phaser.Scene {
           this.playerViews[leadIndex],
           this.enemyViews[targetIndex],
           "player",
-          () => spawnSuperpowerEffect(this, this.enemyViews[targetIndex].anchorX, this.enemyViews[targetIndex].anchorY, attacker.superpower),
+          () =>
+            spawnSuperpowerEffect(
+              this,
+              this.enemyViews[targetIndex].anchorX,
+              this.enemyViews[targetIndex].anchorY,
+              attacker.superpower,
+            ),
           () => {
             this.applyHit(attacker, defender);
             this.showToast(
@@ -1522,7 +1554,13 @@ export class FightScene extends Phaser.Scene {
             attackerView,
             defenderView,
             "enemy",
-            () => spawnSuperpowerEffect(this, defenderView.anchorX, defenderView.anchorY, attacker.superpower),
+            () =>
+              spawnSuperpowerEffect(
+                this,
+                defenderView.anchorX,
+                defenderView.anchorY,
+                attacker.superpower,
+              ),
             () => {
               this.showToast(`[X] ${attacker.name} -> ${defender.name}!`);
             },

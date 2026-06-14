@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import auraAvatar from "@/assets/images/characters/avatar/aura.png?url";
+import avatarBg from "@/assets/images/characters/avatar/background.png?url";
 import galeAvatar from "@/assets/images/characters/avatar/gale.png?url";
 import irisAvatar from "@/assets/images/characters/avatar/iris.png?url";
 import neilAvatar from "@/assets/images/characters/avatar/neil.png?url";
@@ -9,7 +10,6 @@ import thoraAvatar from "@/assets/images/characters/avatar/thora.png?url";
 import vegaAvatar from "@/assets/images/characters/avatar/vega.png?url";
 import wendyAvatar from "@/assets/images/characters/avatar/wendy.png?url";
 import zephyrAvatar from "@/assets/images/characters/avatar/zephyr.png?url";
-import avatarBg from "@/assets/images/characters/avatar/background.png?url";
 import auraSprite from "@/assets/images/characters/sprite/aura.gif?url";
 import galeSprite from "@/assets/images/characters/sprite/gale.gif?url";
 import irisSprite from "@/assets/images/characters/sprite/iris.gif?url";
