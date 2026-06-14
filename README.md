@@ -155,6 +155,10 @@ yarn storybook        # Start Storybook development server (http://localhost:600
 yarn storybook:build  # Build Storybook for production deployment
 ```
 
+## Credits
+
+ - [Sakura Girl](https://soundcloud.com/sakuragirl_official) - Soundtrack credits
+
 ## Resources
 
 - [Vite Documentation](https://vite.dev/) - Vite build tool documentation
