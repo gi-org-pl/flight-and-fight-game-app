@@ -1,4 +1,15 @@
+export { getCharacters, getMyCharacters } from "@/services/api/characters";
 export { apiClient, createApiClient } from "@/services/api/client/apiClient";
+export {
+  type CharacterResponse,
+  type CharacterStatsResponse,
+  type CharacterType,
+  characterResponseSchema,
+  characterStatsResponseSchema,
+  characterTypeSchema,
+  type Superpower,
+  superpowerSchema,
+} from "@/services/api/schemas/character";
 export {
   type ApiErrorResponse,
   apiErrorResponseSchema,

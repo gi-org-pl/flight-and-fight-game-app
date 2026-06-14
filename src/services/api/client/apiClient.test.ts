@@ -3,10 +3,10 @@ import { apiClient, createApiClient } from "@/services/api/client/apiClient";
 
 describe("createApiClient", () => {
   describe("when no baseURL is provided", () => {
-    it("falls back to the local development server", () => {
+    it("falls back to the production API server", () => {
       const client = createApiClient();
 
-      expect(client.defaults.baseURL).toBe("http://localhost");
+      expect(client.defaults.baseURL).toBe("https://api-faf.gi.org.pl/api/v1/");
     });
   });
 

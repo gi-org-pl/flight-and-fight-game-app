@@ -14,11 +14,11 @@ export const createSession = async (): Promise<SessionCredentialsResponse> => {
   return validateResponse(sessionCredentialsResponseSchema, data);
 };
 
-/** `POST /sessions/{id}/join` — joins an open session as the second player. */
+/** `POST /sessions/{code}/join` — joins an open session as the second player using the last 8 characters of its id. */
 export const joinSession = async (
-  sessionId: string,
+  code: string,
 ): Promise<SessionCredentialsResponse> => {
-  const { data } = await apiClient.post<unknown>(`/sessions/${sessionId}/join`);
+  const { data } = await apiClient.post<unknown>(`/sessions/${code}/join`);
 
   return validateResponse(sessionCredentialsResponseSchema, data);
 };

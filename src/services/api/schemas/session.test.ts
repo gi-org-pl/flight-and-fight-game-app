@@ -7,15 +7,20 @@ import {
 
 describe("sessionStateSchema", () => {
   describe("when given a known state", () => {
-    it("accepts OPEN and CLOSED", () => {
-      expect(sessionStateSchema.parse("OPEN")).toBe("OPEN");
-      expect(sessionStateSchema.parse("CLOSED")).toBe("CLOSED");
+    it("accepts WAITING_FOR_SECOND_PLAYER, WAITING_FOR_CHARACTER_CHOICE, and READY", () => {
+      expect(sessionStateSchema.parse("WAITING_FOR_SECOND_PLAYER")).toBe(
+        "WAITING_FOR_SECOND_PLAYER",
+      );
+      expect(sessionStateSchema.parse("WAITING_FOR_CHARACTER_CHOICE")).toBe(
+        "WAITING_FOR_CHARACTER_CHOICE",
+      );
+      expect(sessionStateSchema.parse("READY")).toBe("READY");
     });
   });
 
   describe("when given an unknown state", () => {
     it("fails validation", () => {
-      expect(sessionStateSchema.safeParse("PENDING").success).toBe(false);
+      expect(sessionStateSchema.safeParse("OPEN").success).toBe(false);
     });
   });
 });
@@ -41,26 +46,42 @@ describe("sessionCredentialsResponseSchema", () => {
 });
 
 describe("getSessionResponseSchema", () => {
-  describe("when the session is still open", () => {
-    it("accepts a null secondPlayerId", () => {
+  describe("when waiting for second player", () => {
+    it("accepts null secondPlayerId and currentlyAttackingPlayerId", () => {
       const payload = {
         id: "s-1",
-        state: "OPEN",
+        state: "WAITING_FOR_SECOND_PLAYER",
         firstPlayerId: "p-1",
         secondPlayerId: null,
+        currentlyAttackingPlayerId: null,
       };
 
       expect(getSessionResponseSchema.parse(payload)).toEqual(payload);
     });
   });
 
-  describe("when the session is closed", () => {
-    it("accepts a populated secondPlayerId", () => {
+  describe("when waiting for character choice", () => {
+    it("accepts populated secondPlayerId and null currentlyAttackingPlayerId", () => {
       const payload = {
         id: "s-1",
-        state: "CLOSED",
+        state: "WAITING_FOR_CHARACTER_CHOICE",
         firstPlayerId: "p-1",
         secondPlayerId: "p-2",
+        currentlyAttackingPlayerId: null,
+      };
+
+      expect(getSessionResponseSchema.parse(payload)).toEqual(payload);
+    });
+  });
+
+  describe("when the game is ready", () => {
+    it("accepts populated secondPlayerId and currentlyAttackingPlayerId", () => {
+      const payload = {
+        id: "s-1",
+        state: "READY",
+        firstPlayerId: "p-1",
+        secondPlayerId: "p-2",
+        currentlyAttackingPlayerId: "p-1",
       };
 
       expect(getSessionResponseSchema.parse(payload)).toEqual(payload);
@@ -74,6 +95,7 @@ describe("getSessionResponseSchema", () => {
         state: "DONE",
         firstPlayerId: "p-1",
         secondPlayerId: null,
+        currentlyAttackingPlayerId: null,
       });
 
       expect(result.success).toBe(false);

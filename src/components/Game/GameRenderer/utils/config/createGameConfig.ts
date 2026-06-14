@@ -1,9 +1,5 @@
 import Phaser from "phaser";
-import {
-  BACKGROUND_COLOR,
-  GAME_HEIGHT,
-  GAME_WIDTH,
-} from "../../GameRenderer.constants";
+import { GAME_HEIGHT, GAME_WIDTH } from "../../GameRenderer.constants";
 import { BootScene } from "../../scenes/BootScene";
 import { CharacterSelectScene } from "../../scenes/CharacterSelectScene";
 import { ConnectScene } from "../../scenes/ConnectScene";
@@ -18,7 +14,7 @@ export const createGameConfig = (
   parent,
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
-  backgroundColor: BACKGROUND_COLOR,
+  transparent: true,
   pixelArt: true,
   // The connect scene overlays real <input>/<img> DOM nodes (session-id field,
   // QR code) on top of the canvas, which needs the DOM container enabled.

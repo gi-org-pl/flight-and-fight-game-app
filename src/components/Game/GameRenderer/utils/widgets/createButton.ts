@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { BEVEL, GAME_PALETTE } from "../../GameRenderer.constants";
 import { darkenColor } from "../color/darkenColor";
+import { playClickSound } from "../sound/playClickSound";
 import { createBitmapText } from "../text/createBitmapText";
 
 export interface ButtonOptions {
@@ -66,7 +67,10 @@ export const createButton = (
   container.setInteractive({ useHandCursor: true });
   container.on("pointerover", () => layoutBevel(HOVER_BEVEL, false));
   container.on("pointerout", () => layoutBevel(BEVEL, false));
-  container.on("pointerdown", () => layoutBevel(BEVEL, true));
+  container.on("pointerdown", () => {
+    playClickSound(scene);
+    layoutBevel(BEVEL, true);
+  });
   container.on("pointerup", () => {
     layoutBevel(BEVEL, false);
     onClick();

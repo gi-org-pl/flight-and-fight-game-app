@@ -1,5 +1,4 @@
 import { COLORS } from "@/constants/common";
-import type { GameCharacter } from "./GameRenderer.types";
 import { toColorNumber } from "./utils/color/toColorNumber";
 
 // Low base resolution rendered with pixelArt + Scale.FIT: the 960x540 host
@@ -20,6 +19,10 @@ export const GAME_PALETTE = {
   ORCHID: toColorNumber(COLORS.ORCHID),
   LAVENDER: toColorNumber(COLORS.LAVENDER),
   PERIWINKLE: toColorNumber(COLORS.PERIWINKLE),
+  MAUVE: toColorNumber(COLORS.MAUVE),
+  RED: toColorNumber(COLORS.RED),
+  GREEN: toColorNumber(COLORS.GREEN),
+  ORANGE: toColorNumber(COLORS.ORANGE),
 };
 
 export const TEXT_COLOR = "#ffffff";
@@ -31,20 +34,16 @@ export const TEXT_COLOR_NUMBER = 0xff_ff_ff;
 // same on-screen weight as `.nes-btn`.
 export const BEVEL = 2;
 
+export const HOME_BG_LAYER_KEYS = [
+  "home-bg-layer-1",
+  "home-bg-layer-2",
+  "home-bg-layer-3",
+  "home-bg-layer-4",
+] as const;
+
 export const MAX_ROSTER = 5;
 // Stats are scored on this scale; the info-panel bars fill relative to it.
 export const MAX_STAT = 10;
 
-// Mocked roster — stats stand in for an API the game is not wired to yet.
-export const CHARACTERS: GameCharacter[] = [
-  { id: "c1", name: "Falcon", stats: { power: 7, speed: 8, defense: 5 } },
-  { id: "c2", name: "Viper", stats: { power: 9, speed: 6, defense: 4 } },
-  { id: "c3", name: "Comet", stats: { power: 5, speed: 10, defense: 3 } },
-  { id: "c4", name: "Raptor", stats: { power: 8, speed: 7, defense: 6 } },
-  { id: "c5", name: "Blaze", stats: { power: 10, speed: 5, defense: 5 } },
-  { id: "c6", name: "Storm", stats: { power: 6, speed: 9, defense: 7 } },
-  { id: "c7", name: "Nova", stats: { power: 7, speed: 7, defense: 7 } },
-  { id: "c8", name: "Talon", stats: { power: 8, speed: 6, defense: 8 } },
-  { id: "c9", name: "Vortex", stats: { power: 4, speed: 8, defense: 9 } },
-  { id: "c10", name: "Phantom", stats: { power: 9, speed: 9, defense: 2 } },
-];
+export const MUSIC_KEY_LOBBY = "music-lobby";
+export const MUSIC_KEY_FIGHT = "music-fight";

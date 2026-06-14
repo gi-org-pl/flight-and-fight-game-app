@@ -5,7 +5,7 @@ import {
 } from "@/services/api/utils/interceptors";
 
 /** Falls back to the local development server from the OpenAPI document. */
-const DEFAULT_BASE_URL = "https://api-faf.gi.org.pl/";
+const DEFAULT_BASE_URL = "https://api-faf.gi.org.pl/api/v1/";
 
 /**
  * Builds an Axios instance pre-wired with the auth + error-normalisation

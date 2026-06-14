@@ -43,14 +43,14 @@ describe("joinSession", () => {
   });
 
   describe("when joining an open session", () => {
-    it("posts to the join path with the session id", async () => {
+    it("posts to the join path with the code", async () => {
       const postSpy = vi
         .spyOn(apiClient, "post")
         .mockResolvedValue({ data: credentials });
 
-      const result = await joinSession("s-1");
+      const result = await joinSession("RRFFQ69G");
 
-      expect(postSpy).toHaveBeenCalledWith("/sessions/s-1/join");
+      expect(postSpy).toHaveBeenCalledWith("/sessions/RRFFQ69G/join");
       expect(result).toEqual(credentials);
     });
   });
@@ -65,9 +65,10 @@ describe("getSession", () => {
     it("gets the session path and returns the parsed state", async () => {
       const session = {
         id: "s-1",
-        state: "OPEN",
+        state: "WAITING_FOR_SECOND_PLAYER",
         firstPlayerId: "p-1",
         secondPlayerId: null,
+        currentlyAttackingPlayerId: null,
       };
       const getSpy = vi
         .spyOn(apiClient, "get")

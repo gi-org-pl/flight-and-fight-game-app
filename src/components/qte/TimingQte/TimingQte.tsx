@@ -81,18 +81,27 @@ const TimingQte = ({ definition, onComplete }: TimingQteProps) => {
   }
 
   const zoneLeft = params.zoneCenterPercent - params.zoneWidthPercent / 2;
+  const innerZoneWidth = params.zoneWidthPercent * 0.5;
+  const innerZoneLeft = params.zoneCenterPercent - innerZoneWidth / 2;
   const timeLeftSec = (timeLeftMs / 1000).toFixed(1);
 
   return (
     <div className="flex flex-col items-center gap-4 p-4">
       <p className="text-white text-center">{title}</p>
       <p className="text-white">Press when the cursor hits the zone!</p>
-      <div className="relative w-full h-6 bg-white/20 overflow-hidden">
+      <div className="relative w-full h-6 bg-red-700/70 overflow-hidden">
         <div
-          className="absolute top-0 h-full bg-lavender/70"
+          className="absolute top-0 h-full bg-orange-400/80"
           style={{
             left: `${zoneLeft}%`,
             width: `${params.zoneWidthPercent}%`,
+          }}
+        />
+        <div
+          className="absolute top-0 h-full bg-green-500/90"
+          style={{
+            left: `${innerZoneLeft}%`,
+            width: `${innerZoneWidth}%`,
           }}
         />
         {/* Cursor is animated purely via CSS — position computed from Date.now() on press */}

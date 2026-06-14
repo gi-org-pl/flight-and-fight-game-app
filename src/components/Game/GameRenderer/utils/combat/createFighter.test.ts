@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { GameCharacter } from "../../GameRenderer.types";
+import type { CharacterResponse } from "@/services/api/schemas/character";
 import { createFighter, maxHealthFor } from "./createFighter";
 
-const character: GameCharacter = {
-  id: "c1",
-  name: "Falcon",
-  stats: { power: 7, speed: 8, defense: 5 },
+const character: CharacterResponse = {
+  type: "IRIS",
+  superpower: "LIGHT",
+  stats: { power: 6, intelligence: 9, defense: 6, health: 7 },
 };
 
 describe("createFighter", () => {
@@ -20,21 +20,21 @@ describe("createFighter", () => {
     it("carries over the character identity and stats", () => {
       const fighter = createFighter(character);
 
-      expect(fighter.id).toBe("c1");
-      expect(fighter.name).toBe("Falcon");
+      expect(fighter.id).toBe("IRIS");
+      expect(fighter.name).toBe("Iris");
       expect(fighter.stats).toEqual(character.stats);
     });
   });
 
-  describe("when comparing defensive characters", () => {
-    it("gives the higher-defense fighter a larger health pool", () => {
+  describe("when comparing characters with different health stats", () => {
+    it("gives the higher-health fighter a larger health pool", () => {
       const tanky = maxHealthFor({
         ...character,
-        stats: { ...character.stats, defense: 9 },
+        stats: { ...character.stats, health: 10 },
       });
       const fragile = maxHealthFor({
         ...character,
-        stats: { ...character.stats, defense: 2 },
+        stats: { ...character.stats, health: 1 },
       });
 
       expect(tanky).toBeGreaterThan(fragile);

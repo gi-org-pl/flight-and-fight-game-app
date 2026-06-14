@@ -28,6 +28,29 @@ const RecallQte = ({ definition, onComplete }: RecallQteProps) => {
   const progressRef = useRef(0);
   progressRef.current = progress;
 
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  // Reveal symbols one by one during memorize phase
+  useEffect(() => {
+    if (phase !== "memorize") return;
+
+    const revealInterval = Math.min(
+      600,
+      params.memorizeMs / (params.sequence.length + 1),
+    );
+    const interval = setInterval(() => {
+      setVisibleCount((prev) => {
+        if (prev >= params.sequence.length) {
+          clearInterval(interval);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, revealInterval);
+
+    return () => clearInterval(interval);
+  }, [phase, params.memorizeMs, params.sequence.length]);
+
   // Memorize countdown
   useEffect(() => {
     if (phase !== "memorize") return;
@@ -96,7 +119,7 @@ const RecallQte = ({ definition, onComplete }: RecallQteProps) => {
         setProgress(newProgress);
       }
     } else {
-      setQuality(0);
+      setQuality(progressRef.current / params.sequence.length);
       setPhase("result");
     }
   };
@@ -117,7 +140,11 @@ const RecallQte = ({ definition, onComplete }: RecallQteProps) => {
         <p className="text-white">Memorize the sequence!</p>
         <div className="flex gap-4 justify-center">
           {params.sequence.map((symbol, index) => (
-            <span key={`${symbol}-${index}`} className="text-3xl text-white">
+            <span
+              key={`${symbol}-${index}`}
+              className="text-3xl text-white transition-opacity duration-500"
+              style={{ opacity: index < visibleCount ? 1 : 0 }}
+            >
               {symbol}
             </span>
           ))}

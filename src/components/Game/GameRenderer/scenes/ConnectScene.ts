@@ -1,6 +1,13 @@
 import Phaser from "phaser";
 import { COLORS } from "@/constants/common";
-import { createSession, getSession, joinSession } from "@/services/api";
+import {
+  createSession,
+  getSession,
+  joinSession,
+  setAuthToken,
+} from "@/services/api";
+import { createGameService } from "@/services/game";
+import type { GameService } from "@/services/game/gameService";
 import {
   GAME_FONT,
   GAME_HEIGHT,
@@ -9,6 +16,7 @@ import {
 } from "../GameRenderer.constants";
 import type {
   ConnectSceneData,
+  GameCharacter,
   GameMode,
   SessionInfo,
 } from "../GameRenderer.types";
@@ -44,9 +52,7 @@ const SHARE_STATUS_Y = SHARE_HINT_Y + 16;
 // while the click always copies the full value.
 const ID_PREVIEW_MAX = 14;
 
-// How often we re-check our own session for an arriving opponent, and how long
-// we wait after the last keystroke before checking a typed id against the API.
-const POLL_INTERVAL_MS = 1500;
+// How long we wait after the last keystroke before checking a typed id against the API.
 const JOIN_DEBOUNCE_MS = 500;
 
 // JOIN side reports on the typed-id check; SHARE side reports on the hosted
@@ -57,10 +63,13 @@ const SHARE_WAITING = "Waiting for the other player";
 
 export class ConnectScene extends Phaser.Scene {
   private mode: GameMode = "multiplayer";
+  private characters: GameCharacter[] = [];
   private sessionId?: string;
+  private shareCode?: string;
   private playerId?: string;
-  // Latches once we hand off to the next scene so a slow poll/join that
-  // resolves afterwards can't trigger a second transition.
+  private gameService?: GameService;
+  // Latches once we hand off to the next scene so a slow socket event or
+  // join response that resolves afterwards can't trigger a second transition.
   private resolved = false;
   private joinStatus?: Phaser.GameObjects.BitmapText;
   private shareStatus?: Phaser.GameObjects.BitmapText;
@@ -68,6 +77,7 @@ export class ConnectScene extends Phaser.Scene {
   private shareHint?: Phaser.GameObjects.BitmapText;
   private joinInput?: HTMLInputElement;
   private joinDebounced?: Debounced<[string]>;
+  private sessionPollTimer?: ReturnType<typeof setInterval>;
 
   constructor() {
     super(CONNECT_SCENE_KEY);
@@ -75,10 +85,19 @@ export class ConnectScene extends Phaser.Scene {
 
   create(data: ConnectSceneData): void {
     this.mode = data.mode;
+    this.characters = data.characters;
     this.resolved = false;
     this.sessionId = undefined;
     this.playerId = undefined;
 
+    this.cameras.main.fadeIn(350, 174, 158, 225);
+    this.add.rectangle(
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      GAME_PALETTE.PERIWINKLE,
+    );
     this.buildLayout();
     this.joinDebounced = debounce(
       (id: string) => this.attemptJoin(id),
@@ -101,16 +120,40 @@ export class ConnectScene extends Phaser.Scene {
   }
 
   private buildLayout(): void {
-    this.add.rectangle(
+    const divider = this.add.rectangle(
       DIVIDER_X,
       GAME_HEIGHT / 2,
       2,
       GAME_HEIGHT - 40,
       GAME_PALETTE.LAVENDER,
     );
+    divider.setScale(1, 0);
+    this.tweens.add({
+      targets: divider,
+      scaleY: 1,
+      duration: 450,
+      ease: "Cubic.easeOut",
+      delay: 80,
+    });
 
     // --- JOIN (left) ---
-    createBitmapText(this, LEFT_CX, HEADER_Y, "JOIN", FONT_HEADER);
+    const joinHeader = createBitmapText(
+      this,
+      LEFT_CX - 18,
+      HEADER_Y,
+      "JOIN",
+      FONT_HEADER,
+    );
+    joinHeader.setAlpha(0);
+    this.tweens.add({
+      targets: joinHeader,
+      alpha: 1,
+      x: LEFT_CX,
+      duration: 400,
+      ease: "Cubic.easeOut",
+      delay: 200,
+    });
+
     this.joinInput = this.buildInput();
     this.joinStatus = createBitmapText(
       this,
@@ -127,7 +170,23 @@ export class ConnectScene extends Phaser.Scene {
     });
 
     // --- SHARE (right) ---
-    createBitmapText(this, RIGHT_CX, HEADER_Y, "SHARE", FONT_HEADER);
+    const shareHeader = createBitmapText(
+      this,
+      RIGHT_CX + 18,
+      HEADER_Y,
+      "SHARE",
+      FONT_HEADER,
+    );
+    shareHeader.setAlpha(0);
+    this.tweens.add({
+      targets: shareHeader,
+      alpha: 1,
+      x: RIGHT_CX,
+      duration: 400,
+      ease: "Cubic.easeOut",
+      delay: 300,
+    });
+
     this.buildShareBox();
     this.shareStatus = createBitmapText(
       this,
@@ -137,6 +196,16 @@ export class ConnectScene extends Phaser.Scene {
       FONT_BODY,
       GAME_PALETTE.LAVENDER,
     );
+
+    // Pulse the share status to signal the "live/waiting" state.
+    this.tweens.add({
+      targets: this.shareStatus,
+      alpha: 0.35,
+      duration: 950,
+      ease: "Sine.easeInOut",
+      yoyo: true,
+      repeat: -1,
+    });
   }
 
   private buildInput(): HTMLInputElement {
@@ -178,14 +247,15 @@ export class ConnectScene extends Phaser.Scene {
   }
 
   private buildShareBox(): void {
-    const box = createPanel(
+    const { base: box } = createPanel(
       this,
       RIGHT_CX,
       SHARE_BOX_Y,
       SHARE_BOX_WIDTH,
       SHARE_BOX_HEIGHT,
       GAME_PALETTE.BLUSH,
-    ).setInteractive({ useHandCursor: true });
+    );
+    box.setInteractive({ useHandCursor: true });
 
     this.shareId = createBitmapText(
       this,
@@ -207,27 +277,63 @@ export class ConnectScene extends Phaser.Scene {
   }
 
   private copyId(): void {
-    if (!this.sessionId) {
+    if (!this.shareCode) {
       return;
     }
 
-    void globalThis.navigator?.clipboard?.writeText(this.sessionId);
+    void globalThis.navigator?.clipboard?.writeText(this.shareCode);
     this.shareHint?.setText("Copied!");
   }
 
   private async hostSession(): Promise<void> {
     try {
       const { sessionId, playerId } = await createSession();
-      const shortSessionId = sessionId.slice(-8);
+      const shareCode = sessionId.slice(-8);
 
       if (!this.sys.isActive() || this.resolved) {
         return;
       }
 
-      this.sessionId = shortSessionId;
+      this.sessionId = sessionId;
+      this.shareCode = shareCode;
       this.playerId = playerId;
-      this.shareId?.setText(this.previewId(shortSessionId));
-      this.startPolling();
+      this.shareId?.setText(this.previewId(shareCode));
+
+      setAuthToken(playerId);
+      const service = createGameService(playerId, sessionId);
+      this.gameService = service;
+
+      service.onSession((session) => {
+        if (session.secondPlayerId && this.playerId && this.sessionId) {
+          this.proceed({
+            sessionId: this.sessionId,
+            playerId: this.playerId,
+            role: "host",
+            gameService: service,
+          });
+        }
+      });
+
+      service.connect();
+
+      this.sessionPollTimer = setInterval(async () => {
+        if (this.resolved || !this.sessionId) {
+          return;
+        }
+        try {
+          const session = await getSession(this.sessionId);
+          if (session.secondPlayerId && this.playerId && this.sessionId) {
+            this.proceed({
+              sessionId: this.sessionId,
+              playerId: this.playerId,
+              role: "host",
+              gameService: service,
+            });
+          }
+        } catch {
+          // silently ignore poll errors
+        }
+      }, 1000);
     } catch (error) {
       this.setShareStatus(this.toMessage(error));
     }
@@ -239,47 +345,32 @@ export class ConnectScene extends Phaser.Scene {
       : sessionId;
   }
 
-  private startPolling(): void {
-    this.time.addEvent({
-      delay: POLL_INTERVAL_MS,
-      loop: true,
-      callback: () => this.pollSession(),
-    });
-  }
-
-  private async pollSession(): Promise<void> {
-    if (this.resolved || !this.sessionId) {
-      return;
-    }
-
-    try {
-      const session = await getSession(this.sessionId);
-      if (session.secondPlayerId && this.playerId) {
-        this.proceed({
-          sessionId: this.sessionId,
-          playerId: this.playerId,
-          role: "host",
-        });
-      }
-    } catch (error) {
-      this.setShareStatus(this.toMessage(error));
-    }
-  }
-
   private async attemptJoin(sessionId: string): Promise<void> {
     if (this.resolved) {
       return;
     }
     // Joining the session we are hosting is a no-op the backend would reject.
-    if (sessionId === this.sessionId) {
+    if (sessionId === this.shareCode) {
       return;
     }
 
     this.setJoinStatus(JOIN_JOINING);
 
     try {
-      const credentials = await joinSession(sessionId);
-      this.proceed({ ...credentials, role: "guest" });
+      const { sessionId: joinedSessionId, playerId } =
+        await joinSession(sessionId);
+
+      setAuthToken(playerId);
+      const service = createGameService(playerId, joinedSessionId);
+      this.gameService = service;
+      service.connect();
+
+      this.proceed({
+        sessionId: joinedSessionId,
+        playerId,
+        role: "guest",
+        gameService: service,
+      });
     } catch (error) {
       this.setJoinStatus(this.toMessage(error));
     }
@@ -290,8 +381,10 @@ export class ConnectScene extends Phaser.Scene {
       return;
     }
     this.resolved = true;
+    clearInterval(this.sessionPollTimer);
     this.scene.start(CHARACTER_SELECT_SCENE_KEY, {
       mode: this.mode,
+      characters: this.characters,
       session,
     });
   }
@@ -310,6 +403,11 @@ export class ConnectScene extends Phaser.Scene {
 
   private cleanup(): void {
     this.joinDebounced?.cancel();
+    clearInterval(this.sessionPollTimer);
     this.joinInput = undefined;
+    // Only disconnect if we never handed the service off to the next scene.
+    if (!this.resolved) {
+      this.gameService?.disconnect();
+    }
   }
 }

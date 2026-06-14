@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 import type { Fighter } from "../../GameRenderer.types";
 import { computeDamage } from "./computeDamage";
 
-const fighter = (power: number, speed: number, defense: number): Fighter => ({
+const fighter = (
+  power: number,
+  intelligence: number,
+  defense: number,
+): Fighter => ({
   id: "x",
   name: "X",
-  stats: { power, speed, defense },
+  stats: { power, intelligence, defense, health: 5 },
   maxHealth: 100,
   health: 100,
 });
