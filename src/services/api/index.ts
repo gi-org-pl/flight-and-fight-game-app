@@ -1,7 +1,4 @@
-export {
-  getCharacters,
-  getMyCharacters,
-} from "@/services/api/characters";
+export { getCharacters, getMyCharacters } from "@/services/api/characters";
 export { apiClient, createApiClient } from "@/services/api/client/apiClient";
 export {
   type CharacterResponse,
