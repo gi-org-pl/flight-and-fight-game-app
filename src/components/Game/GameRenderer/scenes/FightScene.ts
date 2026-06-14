@@ -708,11 +708,12 @@ export class FightScene extends Phaser.Scene {
       this.awaitingServer = true;
       this.animating = true;
       this.refresh();
-      // No attack-side QTE yet, so the attacker uses the neutral multiplier.
       this.gameService.attack({
         attackingCharacter: attackingCharacter as CharacterType,
         attackedCharacter: attackedCharacter as CharacterType,
-        quickTimeEventMultiplier: QTE_MULTIPLIER_MIN,
+        quickTimeEventMultiplier:
+          QTE_MULTIPLIER_MIN +
+          Math.random() * (QTE_MULTIPLIER_MAX - QTE_MULTIPLIER_MIN),
       });
       return;
     }
@@ -1557,17 +1558,40 @@ export class FightScene extends Phaser.Scene {
   private subscribeToGameEvents(): void {
     const gs = this.gameService!;
 
-    const unsubAttacked = gs.onAttacked(({ attackingPlayerId }) => {
+    const unsubAttacked = gs.onAttacked((payload) => {
       if (this.resolved || !this.sys.isActive()) return;
-      const iAmAttacker = attackingPlayerId === this.myPlayerId;
+      const iAmAttacker = payload.attackingPlayerId === this.myPlayerId;
 
       if (iAmAttacker) {
-        const leadIndex = this.playerOrder[0];
-        const targetIndex = this.selectedTarget ?? this.enemyOrder[0];
-        const attacker = this.playerTeam[leadIndex];
-        const defender = this.enemyTeam[targetIndex];
-        const attackerView = this.playerViews[leadIndex];
-        const defenderView = this.enemyViews[targetIndex];
+        // Prefer server-confirmed characters; fall back to local selection.
+        const leadIndex =
+          payload.attackingCharacter !== undefined
+            ? this.playerTeam.findIndex(
+                (f) => f.id === payload.attackingCharacter,
+              )
+            : this.playerOrder[0];
+        const targetIndex =
+          payload.attackedCharacter !== undefined
+            ? this.enemyTeam.findIndex(
+                (f) => f.id === payload.attackedCharacter,
+              )
+            : (this.selectedTarget ?? this.enemyOrder[0]);
+        const attacker =
+          this.playerTeam[leadIndex >= 0 ? leadIndex : this.playerOrder[0]];
+        const defender =
+          this.enemyTeam[
+            targetIndex >= 0
+              ? targetIndex
+              : (this.selectedTarget ?? this.enemyOrder[0])
+          ];
+        const attackerView =
+          this.playerViews[leadIndex >= 0 ? leadIndex : this.playerOrder[0]];
+        const defenderView =
+          this.enemyViews[
+            targetIndex >= 0
+              ? targetIndex
+              : (this.selectedTarget ?? this.enemyOrder[0])
+          ];
 
         // Two-flag gate: wait for both the approach animation AND the server's
         // turnChanged (which means the defender submitted their QTE result).
@@ -1634,8 +1658,22 @@ export class FightScene extends Phaser.Scene {
           maybeStrike();
         });
       } else {
-        const enemyLeadIndex = this.enemyOrder[0];
-        const myLeadIndex = this.playerOrder[0];
+        // Use server-confirmed characters so the animation matches what the
+        // attacker actually chose, not a local leading-character guess.
+        const enemyAttackerIdx =
+          payload.attackingCharacter !== undefined
+            ? this.enemyTeam.findIndex(
+                (f) => f.id === payload.attackingCharacter,
+              )
+            : this.enemyOrder[0];
+        const myDefenderIdx =
+          payload.attackedCharacter !== undefined
+            ? this.playerTeam.findIndex(
+                (f) => f.id === payload.attackedCharacter,
+              )
+            : this.playerOrder[0];
+        const enemyLeadIndex = enemyAttackerIdx >= 0 ? enemyAttackerIdx : this.enemyOrder[0];
+        const myLeadIndex = myDefenderIdx >= 0 ? myDefenderIdx : this.playerOrder[0];
         const attacker = this.enemyTeam[enemyLeadIndex];
         const defender = this.playerTeam[myLeadIndex];
         const attackerView = this.enemyViews[enemyLeadIndex];
@@ -1738,45 +1776,34 @@ export class FightScene extends Phaser.Scene {
       }
     });
 
-    const unsubCharsUpdated = gs.onCharactersUpdated((characters) => {
+    const unsubCharsUpdated = gs.onCharactersUpdated((rosters) => {
       if (this.resolved) return;
-      for (const char of characters) {
-        const playerFighter = this.playerTeam.find((f) => f.id === char.type);
-        if (playerFighter) {
-          const delta = playerFighter.health - char.stats.health;
-          if (delta > 0) {
-            this.showToast(
-              `[♥] ${playerFighter.name} -${Math.round(delta)} HP`,
-            );
+      for (const roster of rosters) {
+        const isMyRoster = roster.playerId === this.myPlayerId;
+        const team = isMyRoster ? this.playerTeam : this.enemyTeam;
+        for (const char of roster.characters) {
+          const fighter = team.find((f) => f.id === char.type);
+          if (fighter) {
+            const delta = fighter.health - char.stats.health;
+            if (delta > 0) {
+              this.showToast(`[♥] ${fighter.name} -${Math.round(delta)} HP`);
+            }
+            fighter.health = char.stats.health;
           }
-          playerFighter.health = char.stats.health;
-        }
-
-        const enemyFighter = this.enemyTeam.find((f) => f.id === char.type);
-        if (enemyFighter) {
-          const delta = enemyFighter.health - char.stats.health;
-          if (delta > 0) {
-            this.showToast(`[♥] ${enemyFighter.name} -${Math.round(delta)} HP`);
-          }
-          enemyFighter.health = char.stats.health;
         }
       }
       this.refresh();
-      this.finishIfResolved();
+    });
+
+    const unsubGameFinished = gs.onGameFinished((result) => {
+      if (this.resolved) return;
+      this.finishWith(
+        result.winnerId === this.myPlayerId ? "You" : this.opponentLabel,
+      );
     });
 
     const unsubTurnChanged = gs.onTurnChanged((session) => {
       if (this.resolved) return;
-
-      // The server closes the session when the match is over. That is the only
-      // authoritative win signal: my team is still standing, so I won. (A loss
-      // is caught earlier the moment `charactersUpdated` wipes my team.)
-      if (session.state === "CLOSED") {
-        this.finishWith(
-          isTeamDefeated(this.playerTeam) ? this.opponentLabel : "You",
-        );
-        return;
-      }
 
       const iAmAttacker =
         session.currentlyAttackingPlayerId === this.myPlayerId;
@@ -1811,6 +1838,7 @@ export class FightScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       unsubAttacked();
       unsubCharsUpdated();
+      unsubGameFinished();
       unsubTurnChanged();
       unsubException();
     });
