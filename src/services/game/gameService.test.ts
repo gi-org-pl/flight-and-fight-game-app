@@ -21,6 +21,17 @@ const makeMockSocket = (): GameSocket => {
   };
 };
 
+const findWrapped = (
+  mockOn: ReturnType<typeof vi.fn>,
+  event: string,
+): ((...args: unknown[]) => void) => {
+  const call = (mockOn.mock.calls as unknown[][]).find((c) => c[0] === event) as
+    | [string, (...args: unknown[]) => void]
+    | undefined;
+  if (!call) throw new Error(`No listener registered for "${event}"`);
+  return call[1];
+};
+
 const validSession = {
   id: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
   state: "OPEN" as const,
@@ -60,18 +71,24 @@ describe("createGameService", () => {
   });
 
   describe("attack", () => {
-    it("emits the attack event", () => {
+    it("emits the attack event with the payload", () => {
       const service = createGameService("p1", "s1");
-      service.attack();
-      expect(mockSocket.emit).toHaveBeenCalledWith("attack");
+      const payload = {
+        attackingCharacter: "IRIS" as const,
+        attackedCharacter: "ZEPHYR" as const,
+        quickTimeEventMultiplier: 1.5,
+      };
+      service.attack(payload);
+      expect(mockSocket.emit).toHaveBeenCalledWith("attack", payload);
     });
   });
 
   describe("defend", () => {
-    it("emits the defend event", () => {
+    it("emits the defend event with the payload", () => {
       const service = createGameService("p1", "s1");
-      service.defend();
-      expect(mockSocket.emit).toHaveBeenCalledWith("defend");
+      const payload = { quickTimeEventMultiplier: 1.2 };
+      service.defend(payload);
+      expect(mockSocket.emit).toHaveBeenCalledWith("defend", payload);
     });
   });
 
@@ -91,13 +108,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onSession(handler);
-        const [, wrapped] = (
-          mockSocket.on as ReturnType<typeof vi.fn>
-        ).mock.calls.find(([e]: [string]) => e === "session") as [
-          string,
-          (...args: unknown[]) => void,
-        ];
-        wrapped(validSession);
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "session",
+        )(validSession);
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({ id: validSession.id }),
         );
@@ -118,37 +132,88 @@ describe("createGameService", () => {
   });
 
   describe("onAttacked", () => {
-    describe("when a valid attacked payload is received", () => {
+    describe("when a payload with only attackingPlayerId is received", () => {
       it("calls the handler with the parsed payload", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onAttacked(handler);
-        const [, wrapped] = (
-          mockSocket.on as ReturnType<typeof vi.fn>
-        ).mock.calls.find(([e]: [string]) => e === "attacked") as [
-          string,
-          (...args: unknown[]) => void,
-        ];
-        wrapped({ attackingPlayerId: "p2" });
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "attacked",
+        )({
+          attackingPlayerId: "p2",
+        });
         expect(handler).toHaveBeenCalledWith({ attackingPlayerId: "p2" });
+      });
+    });
+
+    describe("when a payload with character types is received", () => {
+      it("calls the handler with attacking and attacked characters", () => {
+        const service = createGameService("p1", "s1");
+        const handler = vi.fn();
+        service.onAttacked(handler);
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "attacked",
+        )({
+          attackingPlayerId: "p2",
+          attackingCharacter: "IRIS",
+          attackedCharacter: "ZEPHYR",
+        });
+        expect(handler).toHaveBeenCalledWith({
+          attackingPlayerId: "p2",
+          attackingCharacter: "IRIS",
+          attackedCharacter: "ZEPHYR",
+        });
       });
     });
   });
 
   describe("onCharactersUpdated", () => {
-    describe("when an empty character list is received", () => {
-      it("calls the handler with an empty array", () => {
+    describe("when a player rosters payload is received", () => {
+      it("calls the handler with the parsed rosters", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onCharactersUpdated(handler);
-        const [, wrapped] = (
-          mockSocket.on as ReturnType<typeof vi.fn>
-        ).mock.calls.find(([e]: [string]) => e === "charactersUpdated") as [
-          string,
-          (...args: unknown[]) => void,
-        ];
-        wrapped([]);
-        expect(handler).toHaveBeenCalledWith([]);
+        const rosters = [{ playerId: "p1", characters: [] }];
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "charactersUpdated",
+        )(rosters);
+        expect(handler).toHaveBeenCalledWith(rosters);
+      });
+    });
+  });
+
+  describe("onCharacterDied", () => {
+    describe("when a characterDied payload is received", () => {
+      it("calls the handler with the parsed payload", () => {
+        const service = createGameService("p1", "s1");
+        const handler = vi.fn();
+        service.onCharacterDied(handler);
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "characterDied",
+        )({ playerId: "p2", character: "IRIS" });
+        expect(handler).toHaveBeenCalledWith({
+          playerId: "p2",
+          character: "IRIS",
+        });
+      });
+    });
+  });
+
+  describe("onGameFinished", () => {
+    describe("when a gameFinished payload is received", () => {
+      it("calls the handler with the parsed payload", () => {
+        const service = createGameService("p1", "s1");
+        const handler = vi.fn();
+        service.onGameFinished(handler);
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "gameFinished",
+        )({ winnerId: "p1", loserId: "p2" });
+        expect(handler).toHaveBeenCalledWith({ winnerId: "p1", loserId: "p2" });
       });
     });
   });
@@ -159,13 +224,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onTurnChanged(handler);
-        const [, wrapped] = (
-          mockSocket.on as ReturnType<typeof vi.fn>
-        ).mock.calls.find(([e]: [string]) => e === "turnChanged") as [
-          string,
-          (...args: unknown[]) => void,
-        ];
-        wrapped(validSession);
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "turnChanged",
+        )(validSession);
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({ id: validSession.id }),
         );
@@ -179,13 +241,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onReady(handler);
-        const [, wrapped] = (
-          mockSocket.on as ReturnType<typeof vi.fn>
-        ).mock.calls.find((call) => call[0] === "ready") as [
-          string,
-          (...args: unknown[]) => void,
-        ];
-        wrapped({
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "ready",
+        )({
           ...validSession,
           state: "READY",
           currentlyAttackingPlayerId: "p1",
@@ -218,13 +277,13 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onException(handler);
-        const [, wrapped] = (
-          mockSocket.on as ReturnType<typeof vi.fn>
-        ).mock.calls.find(([e]: [string]) => e === "exception") as [
-          string,
-          (...args: unknown[]) => void,
-        ];
-        wrapped({ status: "error", message: "Not your turn." });
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "exception",
+        )({
+          status: "error",
+          message: "Not your turn.",
+        });
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({ message: "Not your turn." }),
         );
