@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  type CharacterType,
   characterStatsResponseSchema,
   characterTypeSchema,
 } from "@/services/api/schemas/character";
@@ -25,6 +26,30 @@ export const attackedPayloadSchema = z.object({
 });
 
 export type AttackedPayload = z.infer<typeof attackedPayloadSchema>;
+
+// The QTE multiplier the server accepts is clamped to this inclusive range.
+export const QTE_MULTIPLIER_MIN = 1;
+export const QTE_MULTIPLIER_MAX = 2;
+
+/**
+ * Payload the attacking player sends with `attack`. Despite the AsyncAPI doc
+ * describing an empty payload, the live server requires the attacker to name
+ * both combatants and supply its quick-time multiplier (1–2).
+ */
+export interface AttackActionPayload {
+  attackingCharacter: CharacterType;
+  attackedCharacter: CharacterType;
+  quickTimeEventMultiplier: number;
+}
+
+/**
+ * Payload the defending player sends with `defend`. The server already knows
+ * the pending attack's combatants, so it rejects character fields here and
+ * only accepts the defender's quick-time multiplier (1–2).
+ */
+export interface DefendActionPayload {
+  quickTimeEventMultiplier: number;
+}
 
 export const characterSchema = z.object({
   type: characterTypeSchema,

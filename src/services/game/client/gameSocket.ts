@@ -1,7 +1,9 @@
 import { io, type Socket } from "socket.io-client";
 import type {
+  AttackActionPayload,
   AttackedPayload,
   CharacterList,
+  DefendActionPayload,
   Exception,
   Session,
 } from "@/services/game/schemas/game";
@@ -16,8 +18,8 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  attack: () => void;
-  defend: () => void;
+  attack: (payload: AttackActionPayload) => void;
+  defend: (payload: DefendActionPayload) => void;
   selectCharacters: (payload: { characters: string[] }) => void;
 }
 

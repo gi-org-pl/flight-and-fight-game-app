@@ -5,6 +5,10 @@ import type {
 } from "@/services/api/schemas/character";
 import type { GameService } from "@/services/game/gameService";
 import {
+  QTE_MULTIPLIER_MAX,
+  QTE_MULTIPLIER_MIN,
+} from "@/services/game/schemas/game";
+import {
   GAME_BITMAP_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
@@ -623,10 +627,17 @@ export class FightScene extends Phaser.Scene {
     }
 
     if (this.gameService) {
+      const attackingCharacter = this.playerTeam[this.playerOrder[0]].id;
+      const attackedCharacter = this.enemyTeam[this.selectedTarget].id;
       this.awaitingServer = true;
       this.animating = true;
       this.refresh();
-      this.gameService.attack();
+      // No attack-side QTE yet, so the attacker uses the neutral multiplier.
+      this.gameService.attack({
+        attackingCharacter: attackingCharacter as CharacterType,
+        attackedCharacter: attackedCharacter as CharacterType,
+        quickTimeEventMultiplier: QTE_MULTIPLIER_MIN,
+      });
       return;
     }
 
@@ -1375,7 +1386,15 @@ export class FightScene extends Phaser.Scene {
                   : "TOO SLOW";
           this.showToast(`[>] Defense: ${defenseLabel}`);
 
-          gs.defend();
+          // Only the multiplier — the server already knows the pending attack's
+          // combatants, and rejects character fields on `defend`. Clamp to the
+          // server's accepted 1–2 range.
+          gs.defend({
+            quickTimeEventMultiplier: Math.min(
+              QTE_MULTIPLIER_MAX,
+              Math.max(QTE_MULTIPLIER_MIN, multiplier),
+            ),
+          });
 
           this.clashStrike(
             attackerView,

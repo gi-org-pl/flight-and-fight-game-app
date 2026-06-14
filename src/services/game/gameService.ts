@@ -3,10 +3,12 @@ import {
   type GameSocket,
 } from "@/services/game/client/gameSocket";
 import {
+  type AttackActionPayload,
   type AttackedPayload,
   attackedPayloadSchema,
   type CharacterList,
   characterListSchema,
+  type DefendActionPayload,
   type Exception,
   exceptionSchema,
   type Session,
@@ -16,8 +18,8 @@ import {
 export interface GameService {
   connect: () => void;
   disconnect: () => void;
-  attack: () => void;
-  defend: () => void;
+  attack: (payload: AttackActionPayload) => void;
+  defend: (payload: DefendActionPayload) => void;
   selectCharacters: (characters: string[]) => void;
   onSession: (handler: (session: Session) => void) => () => void;
   onAttacked: (handler: (payload: AttackedPayload) => void) => () => void;
@@ -47,8 +49,8 @@ export const createGameService = (
   return {
     connect: () => socket.connect(),
     disconnect: () => socket.disconnect(),
-    attack: () => socket.emit("attack"),
-    defend: () => socket.emit("defend"),
+    attack: (payload) => socket.emit("attack", payload),
+    defend: (payload) => socket.emit("defend", payload),
     selectCharacters: (characters) =>
       socket.emit("selectCharacters", { characters }),
 
