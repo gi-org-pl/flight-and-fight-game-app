@@ -6,7 +6,7 @@ export const playLowHealthSound = (scene: Phaser.Scene): void => {
 
   const now = ctx.currentTime;
   // Two urgent short beeps — like a warning alarm
-  // biome-ignore lint/complexity/noForEach: <explanation>
+  // biome-ignore lint/complexity/noForEach: no time to improve
   [0, 0.14].forEach((offset) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
