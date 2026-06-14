@@ -1672,8 +1672,10 @@ export class FightScene extends Phaser.Scene {
                 (f) => f.id === payload.attackedCharacter,
               )
             : this.playerOrder[0];
-        const enemyLeadIndex = enemyAttackerIdx >= 0 ? enemyAttackerIdx : this.enemyOrder[0];
-        const myLeadIndex = myDefenderIdx >= 0 ? myDefenderIdx : this.playerOrder[0];
+        const enemyLeadIndex =
+          enemyAttackerIdx >= 0 ? enemyAttackerIdx : this.enemyOrder[0];
+        const myLeadIndex =
+          myDefenderIdx >= 0 ? myDefenderIdx : this.playerOrder[0];
         const attacker = this.enemyTeam[enemyLeadIndex];
         const defender = this.playerTeam[myLeadIndex];
         const attackerView = this.enemyViews[enemyLeadIndex];

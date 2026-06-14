@@ -28,7 +28,9 @@ export interface GameService {
   selectCharacters: (characters: string[]) => void;
   onSession: (handler: (session: Session) => void) => () => void;
   onAttacked: (handler: (payload: AttackedPayload) => void) => () => void;
-  onCharactersUpdated: (handler: (rosters: PlayerRosters) => void) => () => void;
+  onCharactersUpdated: (
+    handler: (rosters: PlayerRosters) => void,
+  ) => () => void;
   onCharacterDied: (handler: (payload: CharacterDied) => void) => () => void;
   onGameFinished: (handler: (payload: GameFinished) => void) => () => void;
   onTurnChanged: (handler: (session: Session) => void) => () => void;
@@ -95,10 +97,7 @@ export const createGameService = (
 
     onCharacterDied: (handler) => {
       const wrapped = (raw: unknown) => handler(characterDiedSchema.parse(raw));
-      socket.on(
-        "characterDied",
-        wrapped as (payload: CharacterDied) => void,
-      );
+      socket.on("characterDied", wrapped as (payload: CharacterDied) => void);
       return makeUnsubscribe(
         socket,
         "characterDied",
@@ -108,10 +107,7 @@ export const createGameService = (
 
     onGameFinished: (handler) => {
       const wrapped = (raw: unknown) => handler(gameFinishedSchema.parse(raw));
-      socket.on(
-        "gameFinished",
-        wrapped as (payload: GameFinished) => void,
-      );
+      socket.on("gameFinished", wrapped as (payload: GameFinished) => void);
       return makeUnsubscribe(
         socket,
         "gameFinished",

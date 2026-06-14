@@ -25,9 +25,9 @@ const findWrapped = (
   mockOn: ReturnType<typeof vi.fn>,
   event: string,
 ): ((...args: unknown[]) => void) => {
-  const call = (mockOn.mock.calls as unknown[][]).find(
-    (c) => c[0] === event,
-  ) as [string, (...args: unknown[]) => void] | undefined;
+  const call = (mockOn.mock.calls as unknown[][]).find((c) => c[0] === event) as
+    | [string, (...args: unknown[]) => void]
+    | undefined;
   if (!call) throw new Error(`No listener registered for "${event}"`);
   return call[1];
 };
@@ -108,9 +108,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onSession(handler);
-        findWrapped(mockSocket.on as ReturnType<typeof vi.fn>, "session")(
-          validSession,
-        );
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "session",
+        )(validSession);
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({ id: validSession.id }),
         );
@@ -136,7 +137,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onAttacked(handler);
-        findWrapped(mockSocket.on as ReturnType<typeof vi.fn>, "attacked")({
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "attacked",
+        )({
           attackingPlayerId: "p2",
         });
         expect(handler).toHaveBeenCalledWith({ attackingPlayerId: "p2" });
@@ -148,7 +152,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onAttacked(handler);
-        findWrapped(mockSocket.on as ReturnType<typeof vi.fn>, "attacked")({
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "attacked",
+        )({
           attackingPlayerId: "p2",
           attackingCharacter: "IRIS",
           attackedCharacter: "ZEPHYR",
@@ -217,9 +224,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onTurnChanged(handler);
-        findWrapped(mockSocket.on as ReturnType<typeof vi.fn>, "turnChanged")(
-          validSession,
-        );
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "turnChanged",
+        )(validSession);
         expect(handler).toHaveBeenCalledWith(
           expect.objectContaining({ id: validSession.id }),
         );
@@ -233,7 +241,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onReady(handler);
-        findWrapped(mockSocket.on as ReturnType<typeof vi.fn>, "ready")({
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "ready",
+        )({
           ...validSession,
           state: "READY",
           currentlyAttackingPlayerId: "p1",
@@ -266,7 +277,10 @@ describe("createGameService", () => {
         const service = createGameService("p1", "s1");
         const handler = vi.fn();
         service.onException(handler);
-        findWrapped(mockSocket.on as ReturnType<typeof vi.fn>, "exception")({
+        findWrapped(
+          mockSocket.on as ReturnType<typeof vi.fn>,
+          "exception",
+        )({
           status: "error",
           message: "Not your turn.",
         });
