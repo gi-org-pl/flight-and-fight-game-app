@@ -34,8 +34,16 @@ export const TEXT_COLOR_NUMBER = 0xff_ff_ff;
 // same on-screen weight as `.nes-btn`.
 export const BEVEL = 2;
 
-export const HOME_BG_KEY = "home-bg";
+export const HOME_BG_LAYER_KEYS = [
+  "home-bg-layer-1",
+  "home-bg-layer-2",
+  "home-bg-layer-3",
+  "home-bg-layer-4",
+] as const;
 
 export const MAX_ROSTER = 5;
 // Stats are scored on this scale; the info-panel bars fill relative to it.
 export const MAX_STAT = 10;
+
+export const MUSIC_KEY_LOBBY = "music-lobby";
+export const MUSIC_KEY_FIGHT = "music-fight";

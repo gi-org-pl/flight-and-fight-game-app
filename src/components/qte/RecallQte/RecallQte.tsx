@@ -119,7 +119,7 @@ const RecallQte = ({ definition, onComplete }: RecallQteProps) => {
         setProgress(newProgress);
       }
     } else {
-      setQuality(0);
+      setQuality(progressRef.current / params.sequence.length);
       setPhase("result");
     }
   };

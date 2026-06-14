@@ -1,19 +1,23 @@
 import Phaser from "phaser";
+import { QTE_DEFINITIONS } from "@/constants/qte";
 import type {
   CharacterResponse,
   CharacterType,
 } from "@/services/api/schemas/character";
 import type { GameService } from "@/services/game/gameService";
+import { qteBridge } from "@/services/game/qteBridge";
 import {
   QTE_MULTIPLIER_MAX,
   QTE_MULTIPLIER_MIN,
 } from "@/services/game/schemas/game";
+import type { QteDefinition } from "@/types/qte";
 import {
   GAME_BITMAP_FONT,
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
   MAX_ROSTER,
+  MUSIC_KEY_FIGHT,
 } from "../GameRenderer.constants";
 import type { Fighter, FightSceneData, FightSide } from "../GameRenderer.types";
 import { spriteTextureKey } from "../utils/avatar/characterAssets";
@@ -24,6 +28,12 @@ import { createFighter } from "../utils/combat/createFighter";
 import { isAlive, isTeamDefeated } from "../utils/combat/nextAliveIndex";
 import { spawnSuperpowerEffect } from "../utils/combat/spawnSuperpowerEffect";
 import { wedgePositions } from "../utils/layout/wedgePositions";
+import { playMusic, stopMusic } from "../utils/sound/musicManager";
+import { playAttackSound } from "../utils/sound/playAttackSound";
+import { playFightStartSound } from "../utils/sound/playFightStartSound";
+import { playHealthDownSound } from "../utils/sound/playHealthDownSound";
+import { playLowHealthSound } from "../utils/sound/playLowHealthSound";
+import { playSuperpowerSound } from "../utils/sound/playSuperpowerSound";
 import { createBitmapText } from "../utils/text/createBitmapText";
 import { createButton } from "../utils/widgets/createButton";
 import { FIGHT_SCENE_KEY, WINNER_SCENE_KEY } from "./sceneKeys";
@@ -74,7 +84,7 @@ const LIVE_TINT = 0xff_ff_ff;
 const ENEMY_TURN_DELAY_MS = 900;
 
 // --- Superpower -------------------------------------------------------------
-const SUPERPOWER_COOLDOWN_ROUNDS = 5;
+const SUPERPOWER_MAX_USES = 3;
 
 // --- Round panel animations -------------------------------------------------
 const YOUR_TURN_SLIDE_MS = 240;
@@ -97,15 +107,6 @@ const TOAST_HOLD_MIN_MS = 300;
 const TOAST_FADE_OUT_MS = 380;
 const TOAST_DEPTH = 10;
 
-// --- Quick Time Event -------------------------------------------------------
-const QTE_DURATION_MS = 2200;
-const QTE_PANEL_W = 176;
-const QTE_PANEL_H = 62;
-const QTE_BAR_W = 144;
-const QTE_BAR_H = 10;
-const QTE_RESULT_HOLD_MS = 500;
-const QTE_DEPTH = 20;
-
 // --- HP drain animation -----------------------------------------------------
 const HP_DRAIN_DELAY = 500;
 const HP_DRAIN_DURATION = 380;
@@ -117,8 +118,8 @@ const VIGNETTE_LOW_HP = 0.35; // threshold below which ambient vignette appears
 const VIGNETTE_AMBIENT_MAX = 0.42; // alpha at 0 HP
 const VIGNETTE_FLASH_ALPHA = 0.68; // spike alpha on player hit
 const VIGNETTE_FLASH_DURATION = 780;
-const VIGNETTE_PULSE_SPEED = 0.0018; // rad/ms
-const VIGNETTE_PULSE_AMP = 0.1;
+const VIGNETTE_PULSE_SPEED = 0.0028; // rad/ms → ~2.2 s cycle (danger heartbeat feel)
+const VIGNETTE_PULSE_AMP = 0.22;
 
 // --- Animation --------------------------------------------------------------
 const MOVE_DURATION = 350;
@@ -213,6 +214,10 @@ export class FightScene extends Phaser.Scene {
   private gameService?: GameService;
   private myPlayerId?: string;
   private awaitingServer = false;
+  // Set by the attacker path in subscribeToGameEvents; called by onTurnChanged
+  // once the server confirms the defender submitted their action.
+  private pendingStrikeCallback?: () => void;
+  private pendingSuperpower = false;
 
   private opponentLabel = "Computer";
   private toastQueue: string[] = [];
@@ -226,14 +231,16 @@ export class FightScene extends Phaser.Scene {
   private prevShowYourTurn = false;
   private attackButton?: Phaser.GameObjects.Container;
   private superpowerButton?: Phaser.GameObjects.Container;
+  private superpowerChargePips: Phaser.GameObjects.Rectangle[] = [];
   private prevSuperpowerReady = false;
-  private superpowerLastUsedRound = 0;
+  private superpowerCharges = SUPERPOWER_MAX_USES;
 
   private vignetteAmbient?: Phaser.GameObjects.Graphics;
   private vignetteFlash?: Phaser.GameObjects.Rectangle;
   private superpowerFlash?: Phaser.GameObjects.Rectangle;
   private vignetteBaseAlpha = 0;
   private prevPlayerHpRatio = 1;
+  private lowHealthLoop?: Phaser.Time.TimerEvent;
 
   constructor() {
     super(FIGHT_SCENE_KEY);
@@ -265,7 +272,10 @@ export class FightScene extends Phaser.Scene {
     this.buildControls();
     this.buildVignette();
 
+    playMusic(this, MUSIC_KEY_FIGHT);
+
     this.refresh();
+    playFightStartSound(this);
     this.showToast(">> Pick a target & attack!");
   }
 
@@ -335,7 +345,7 @@ export class FightScene extends Phaser.Scene {
         : "player";
     this.round = 1;
     this.resolved = false;
-    this.superpowerLastUsedRound = 0;
+    this.superpowerCharges = SUPERPOWER_MAX_USES;
     this.prevSuperpowerReady = false;
     this.prevRoundDisplayed = 1;
     this.prevShowYourTurn = false;
@@ -576,6 +586,40 @@ export class FightScene extends Phaser.Scene {
       fill: GAME_PALETTE.ROSE,
       onClick: () => this.attack(),
     });
+
+    // Charge pips — one square per max use, centred above the superpower button.
+    const PIP_SIZE = 5;
+    const PIP_GAP = 4;
+    const pipsY = BTN_Y - 22;
+    const totalPipsW =
+      SUPERPOWER_MAX_USES * PIP_SIZE + (SUPERPOWER_MAX_USES - 1) * PIP_GAP;
+    const pipsStartX = superpowerX - totalPipsW / 2 + PIP_SIZE / 2;
+    this.superpowerChargePips = [];
+    for (let i = 0; i < SUPERPOWER_MAX_USES; i += 1) {
+      const pip = this.add
+        .rectangle(
+          pipsStartX + i * (PIP_SIZE + PIP_GAP),
+          pipsY,
+          PIP_SIZE,
+          PIP_SIZE,
+          GAME_PALETTE.ORANGE,
+        )
+        .setDepth(TOAST_DEPTH + 1);
+      this.superpowerChargePips.push(pip);
+    }
+  }
+
+  private syncChargePips(): void {
+    const visible =
+      !this.resolved && this.superpowerCharges > 0 && this.turn === "player";
+    for (let i = 0; i < this.superpowerChargePips.length; i += 1) {
+      this.superpowerChargePips[i].setVisible(visible);
+      if (visible) {
+        this.superpowerChargePips[i].setAlpha(
+          i < this.superpowerCharges ? 1 : 0.2,
+        );
+      }
+    }
   }
 
   private spawnSuperpowerParticles(
@@ -592,7 +636,7 @@ export class FightScene extends Phaser.Scene {
       delay: 200,
       loop: true,
       callback: () => {
-        if (!this.sys.isActive()) return;
+        if (!this.sys.isActive() || this.superpowerCharges <= 0) return;
         for (let i = 0; i < 2; i += 1) {
           const angle = Math.random() * Math.PI * 2;
           const rx = Math.round(w / 2 + 4 + Math.random() * 6);
@@ -717,7 +761,6 @@ export class FightScene extends Phaser.Scene {
   }
 
   private superpower(): void {
-    if (this.gameService) return;
     if (this.turn !== "player" || this.resolved || this.animating) {
       return;
     }
@@ -725,64 +768,98 @@ export class FightScene extends Phaser.Scene {
       this.showToast("[!] Pick a target first");
       return;
     }
+    if (this.superpowerCharges <= 0) {
+      this.showToast("[!] No superpower charges left");
+      return;
+    }
 
     const leadIndex = this.playerOrder[0];
     const attacker = this.playerTeam[leadIndex];
-
-    const roundsSinceUsed =
-      this.superpowerLastUsedRound === 0
-        ? SUPERPOWER_COOLDOWN_ROUNDS
-        : this.round - this.superpowerLastUsedRound;
-    if (roundsSinceUsed < SUPERPOWER_COOLDOWN_ROUNDS) {
-      this.showToast(
-        `[!] ${attacker.name} superpower ready in ${SUPERPOWER_COOLDOWN_ROUNDS - roundsSinceUsed} round(s)`,
-      );
-      return;
-    }
     const defender = this.enemyTeam[this.selectedTarget];
     const attackerView = this.playerViews[leadIndex];
     const defenderView = this.enemyViews[this.selectedTarget];
 
+    // Lock UI while QTE is active; for multiplayer also block server actions.
     this.animating = true;
+    if (this.gameService) {
+      this.awaitingServer = true;
+    }
     this.refresh();
 
-    this.animateClash(
-      attackerView,
-      defenderView,
-      "player",
-      () =>
-        spawnSuperpowerEffect(
-          this,
-          defenderView.anchorX,
-          defenderView.anchorY,
-          attacker.superpower,
-        ),
-      () => {
-        this.flashSuperpower();
-        this.superpowerLastUsedRound = this.round;
-        const base = computeDamage(attacker, defender);
-        const superDamage = Math.max(5, Math.round(base * 2.5));
-        defender.health = Math.max(0, defender.health - superDamage);
-        this.refresh();
-        this.showToast(
-          `[**] ${attacker.name} -> ${defender.name}${isAlive(defender) ? "!" : " down!"}`,
-        );
-      },
-      () => {
-        this.animating = false;
-
-        if (this.finishIfResolved()) {
-          return;
-        }
-
-        this.rotateOrder("player");
-        this.selectedTarget = null;
-        this.turn = "enemy";
-        this.refresh();
-
-        this.time.delayedCall(ENEMY_TURN_DELAY_MS, () => this.enemyTurn());
-      },
+    const attackerQtes = QTE_DEFINITIONS.filter(
+      (q): q is QteDefinition => q.role === "attacker",
     );
+    const qte = attackerQtes[Math.floor(Math.random() * attackerQtes.length)];
+
+    qteBridge.request(qte, (quality) => {
+      if (!this.sys.isActive()) {
+        this.animating = false;
+        this.awaitingServer = false;
+        return;
+      }
+
+      this.superpowerCharges -= 1;
+
+      if (this.gameService) {
+        // Multiplayer: send as a regular attack with the QTE-derived multiplier.
+        // onAttacked will play the approach + strike; pendingSuperpower adds visual
+        // effects (flash + sound) on impact.
+        const multiplier =
+          QTE_MULTIPLIER_MIN +
+          quality * (QTE_MULTIPLIER_MAX - QTE_MULTIPLIER_MIN);
+        this.pendingSuperpower = true;
+        this.gameService.attack({
+          attackingCharacter: attacker.id as CharacterType,
+          attackedCharacter: defender.id as CharacterType,
+          quickTimeEventMultiplier: Math.min(
+            QTE_MULTIPLIER_MAX,
+            Math.max(QTE_MULTIPLIER_MIN, multiplier),
+          ),
+        });
+        return;
+      }
+
+      // Single-player: animate immediately; QTE quality scales damage.
+      // quality 0 → base damage; quality 1 → 2.5× base (unchanged max).
+      this.animateClash(
+        attackerView,
+        defenderView,
+        "player",
+        () =>
+          spawnSuperpowerEffect(
+            this,
+            defenderView.anchorX,
+            defenderView.anchorY,
+            attacker.superpower,
+          ),
+        () => {
+          this.flashSuperpower();
+          playSuperpowerSound(this);
+          playHealthDownSound(this);
+          const base = computeDamage(attacker, defender);
+          const superDamage = Math.max(5, Math.round(base * (1 + quality * 1.5)));
+          defender.health = Math.max(0, defender.health - superDamage);
+          this.refresh();
+          this.showToast(
+            `[**] ${attacker.name} -> ${defender.name}${isAlive(defender) ? "!" : " down!"}`,
+          );
+        },
+        () => {
+          this.animating = false;
+
+          if (this.finishIfResolved()) {
+            return;
+          }
+
+          this.rotateOrder("player");
+          this.selectedTarget = null;
+          this.turn = "enemy";
+          this.refresh();
+
+          this.time.delayedCall(ENEMY_TURN_DELAY_MS, () => this.enemyTurn());
+        },
+      );
+    });
   }
 
   // --- Enemy turn ------------------------------------------------------------
@@ -838,6 +915,8 @@ export class FightScene extends Phaser.Scene {
   private applyHit(attacker: Fighter, defender: Fighter): void {
     const damage = computeDamage(attacker, defender);
     defender.health = Math.max(0, defender.health - damage);
+    playAttackSound(this, attacker.superpower);
+    playHealthDownSound(this);
     this.refresh();
   }
 
@@ -861,11 +940,10 @@ export class FightScene extends Phaser.Scene {
 
     const playerDown = isTeamDefeated(this.playerTeam);
 
-    // Multiplayer: only my own team's wipe is authoritative — its health comes
-    // from the server via `charactersUpdated`. The enemy's health on my screen
-    // is a local estimate (the protocol never sends it to me), so a win is
-    // declared by the server closing the session (see `onTurnChanged`), never
-    // from the local enemy estimate.
+    // Multiplayer: both teams' health comes from the server via
+    // `charactersUpdated`. A win is declared by the server closing the session
+    // (see `onTurnChanged` state === 'CLOSED') — that is the authoritative
+    // signal. Loss is caught here the moment `charactersUpdated` wipes my team.
     if (this.gameService) {
       if (!playerDown) {
         return false;
@@ -883,7 +961,10 @@ export class FightScene extends Phaser.Scene {
   private finishWith(winner: string): boolean {
     if (this.resolved) return true;
     this.resolved = true;
+    this.lowHealthLoop?.destroy();
+    this.lowHealthLoop = undefined;
     this.refresh();
+    stopMusic(this);
     this.time.delayedCall(ENEMY_TURN_DELAY_MS * 2, () => {
       if (this.sys.isActive()) {
         this.scene.start(WINNER_SCENE_KEY, { winner });
@@ -930,20 +1011,14 @@ export class FightScene extends Phaser.Scene {
 
     const canAttack =
       !this.resolved &&
+      !this.animating &&
       !this.awaitingServer &&
       this.turn === "player" &&
       this.selectedTarget !== null;
     this.attackButton?.setAlpha(canAttack ? 1 : 0.4);
-    const leader =
-      this.playerOrder[0] !== undefined
-        ? this.playerTeam[this.playerOrder[0]]
-        : undefined;
     const superpowerOffCooldown =
-      leader !== undefined &&
-      !this.gameService &&
-      (this.superpowerLastUsedRound === 0 ||
-        this.round - this.superpowerLastUsedRound >=
-          SUPERPOWER_COOLDOWN_ROUNDS);
+      !this.resolved && this.superpowerCharges > 0 && this.turn === "player";
+    this.syncChargePips();
     if (this.superpowerButton) {
       if (superpowerOffCooldown !== this.prevSuperpowerReady) {
         this.prevSuperpowerReady = superpowerOffCooldown;
@@ -1152,8 +1227,18 @@ export class FightScene extends Phaser.Scene {
       }
 
       // Animate to the new slot when the intended destination changed.
+      // Skip repositioning while a clash animation is in progress — syncTeam
+      // runs from refresh() which fires from onTurnChanged even mid-clash, and
+      // stopping the moveTween would orphan the clashApproach onComplete,
+      // leaving this.animating stuck true. The clash completion callback calls
+      // refresh() again after animating = false, so fighters are repositioned
+      // correctly once the animation concludes.
       const target = assignment.get(index);
-      if (target && (target.x !== view.targetX || target.y !== view.targetY)) {
+      if (
+        !this.animating &&
+        target &&
+        (target.x !== view.targetX || target.y !== view.targetY)
+      ) {
         view.targetX = target.x;
         view.targetY = target.y;
         view.moveTween?.stop();
@@ -1478,34 +1563,73 @@ export class FightScene extends Phaser.Scene {
         const targetIndex = this.selectedTarget ?? this.enemyOrder[0];
         const attacker = this.playerTeam[leadIndex];
         const defender = this.enemyTeam[targetIndex];
+        const attackerView = this.playerViews[leadIndex];
+        const defenderView = this.enemyViews[targetIndex];
 
-        this.animateClash(
-          this.playerViews[leadIndex],
-          this.enemyViews[targetIndex],
-          "player",
-          () =>
-            spawnSuperpowerEffect(
-              this,
-              this.enemyViews[targetIndex].anchorX,
-              this.enemyViews[targetIndex].anchorY,
-              attacker.superpower,
-            ),
-          () => {
-            this.applyHit(attacker, defender);
-            this.showToast(
-              `[X] ${attacker.name} -> ${defender.name}${isAlive(defender) ? "!" : " down!"}`,
-            );
-          },
-          () => {
-            this.awaitingServer = false;
-            this.animating = false;
-            this.rotateOrder("player");
-            this.selectedTarget = null;
-            if (!this.finishIfResolved()) {
-              this.refresh();
-            }
-          },
-        );
+        // Two-flag gate: wait for both the approach animation AND the server's
+        // turnChanged (which means the defender submitted their QTE result).
+        let approachReady = false;
+        let serverSignaled = false;
+        let windupLoop: Phaser.Tweens.Tween | undefined;
+
+        const maybeStrike = () => {
+          if (!approachReady || !serverSignaled) return;
+          if (!this.sys.isActive()) return;
+          windupLoop?.stop();
+          windupLoop = undefined;
+          this.clashStrike(
+            attackerView,
+            defenderView,
+            "player",
+            () =>
+              spawnSuperpowerEffect(
+                this,
+                defenderView.anchorX,
+                defenderView.anchorY,
+                attacker.superpower,
+              ),
+            () => {
+              if (this.pendingSuperpower) {
+                this.flashSuperpower();
+                playSuperpowerSound(this);
+                this.pendingSuperpower = false;
+              }
+              this.showToast(`[X] ${attacker.name} -> ${defender.name}!`);
+            },
+            () => {
+              this.awaitingServer = false;
+              this.animating = false;
+              this.rotateOrder("player");
+              this.selectedTarget = null;
+              if (!this.finishIfResolved()) {
+                this.refresh();
+              }
+            },
+          );
+        };
+
+        // Register before starting approach so onTurnChanged can signal even if
+        // it fires before the approach animation completes.
+        this.pendingStrikeCallback = () => {
+          serverSignaled = true;
+          maybeStrike();
+        };
+
+        this.clashApproach(attackerView, defenderView, "player", () => {
+          approachReady = true;
+          this.showToast("[…] Waiting for defence…");
+          windupLoop = this.tweens.add({
+            targets: attackerView.container,
+            scaleX: 0.88,
+            scaleY: 0.88,
+            angle: { from: CLASH_APPROACH_TILT, to: CLASH_WINDUP_TILT },
+            duration: 300,
+            yoyo: true,
+            repeat: -1,
+            ease: "Sine.InOut",
+          });
+          maybeStrike();
+        });
       } else {
         const enemyLeadIndex = this.enemyOrder[0];
         const myLeadIndex = this.playerOrder[0];
@@ -1521,6 +1645,21 @@ export class FightScene extends Phaser.Scene {
         let qteMultiplier: number | undefined;
         let approachReady = false;
         let windupLoop: Phaser.Tweens.Tween | undefined;
+        let defendSent = false;
+
+        // Send the defend payload to the server as soon as the QTE resolves
+        // (either by pressing space or by the timer expiring). Do NOT gate this
+        // on the approach animation — the server may timeout waiting for defend.
+        const sendDefend = (multiplier: number) => {
+          if (defendSent) return;
+          defendSent = true;
+          gs.defend({
+            quickTimeEventMultiplier: Math.min(
+              QTE_MULTIPLIER_MAX,
+              Math.max(QTE_MULTIPLIER_MIN, multiplier),
+            ),
+          });
+        };
 
         const maybeStrike = () => {
           if (qteMultiplier === undefined || !approachReady) return;
@@ -1539,16 +1678,6 @@ export class FightScene extends Phaser.Scene {
                   ? "GOOD"
                   : "TOO SLOW";
           this.showToast(`[>] Defense: ${defenseLabel}`);
-
-          // Only the multiplier — the server already knows the pending attack's
-          // combatants, and rejects character fields on `defend`. Clamp to the
-          // server's accepted 1–2 range.
-          gs.defend({
-            quickTimeEventMultiplier: Math.min(
-              QTE_MULTIPLIER_MAX,
-              Math.max(QTE_MULTIPLIER_MIN, multiplier),
-            ),
-          });
 
           this.clashStrike(
             attackerView,
@@ -1589,8 +1718,18 @@ export class FightScene extends Phaser.Scene {
           maybeStrike();
         });
 
-        this.showQTE((multiplier) => {
+        const defenderQtes = QTE_DEFINITIONS.filter(
+          (q): q is QteDefinition => q.role === "defender",
+        );
+        const qte =
+          defenderQtes[Math.floor(Math.random() * defenderQtes.length)];
+        qteBridge.request(qte, (quality) => {
+          if (!this.sys.isActive()) return;
+          const multiplier =
+            QTE_MULTIPLIER_MIN +
+            quality * (QTE_MULTIPLIER_MAX - QTE_MULTIPLIER_MIN);
           qteMultiplier = multiplier;
+          sendDefend(multiplier);
           maybeStrike();
         });
       }
@@ -1599,9 +1738,22 @@ export class FightScene extends Phaser.Scene {
     const unsubCharsUpdated = gs.onCharactersUpdated((characters) => {
       if (this.resolved) return;
       for (const char of characters) {
-        const fighter = this.playerTeam.find((f) => f.id === char.type);
-        if (fighter) {
-          fighter.health = char.stats.health;
+        const playerFighter = this.playerTeam.find((f) => f.id === char.type);
+        if (playerFighter) {
+          const delta = playerFighter.health - char.stats.health;
+          if (delta > 0) {
+            this.showToast(`[♥] ${playerFighter.name} -${Math.round(delta)} HP`);
+          }
+          playerFighter.health = char.stats.health;
+        }
+
+        const enemyFighter = this.enemyTeam.find((f) => f.id === char.type);
+        if (enemyFighter) {
+          const delta = enemyFighter.health - char.stats.health;
+          if (delta > 0) {
+            this.showToast(`[♥] ${enemyFighter.name} -${Math.round(delta)} HP`);
+          }
+          enemyFighter.health = char.stats.health;
         }
       }
       this.refresh();
@@ -1625,6 +1777,19 @@ export class FightScene extends Phaser.Scene {
         session.currentlyAttackingPlayerId === this.myPlayerId;
       this.turn = iAmAttacker ? "player" : "enemy";
       this.round += 1;
+
+      // If an attack-side clash is waiting for the defender's QTE result, fire
+      // the strike now. The animation completion callback handles refresh().
+      if (this.pendingStrikeCallback) {
+        const strike = this.pendingStrikeCallback;
+        this.pendingStrikeCallback = undefined;
+        strike();
+        return;
+      }
+
+      if (iAmAttacker && this.selectedTarget === null) {
+        this.selectedTarget = this.enemyOrder[0] ?? null;
+      }
       this.refresh();
       if (iAmAttacker) {
         this.showToast(">> Your turn!");
@@ -1704,6 +1869,18 @@ export class FightScene extends Phaser.Scene {
     if (this.vignetteBaseAlpha <= 0) {
       this.vignetteAmbient.setAlpha(0);
     }
+    const isLow = ratio <= VIGNETTE_LOW_HP;
+    if (isLow && !this.lowHealthLoop) {
+      playLowHealthSound(this);
+      this.lowHealthLoop = this.time.addEvent({
+        delay: 1200,
+        loop: true,
+        callback: () => playLowHealthSound(this),
+      });
+    } else if (!isLow && this.lowHealthLoop) {
+      this.lowHealthLoop.destroy();
+      this.lowHealthLoop = undefined;
+    }
     if (!tookDamage) return;
     this.tweens.killTweensOf(this.vignetteFlash);
     this.vignetteFlash.setAlpha(VIGNETTE_FLASH_ALPHA);
@@ -1752,111 +1929,6 @@ export class FightScene extends Phaser.Scene {
 
     banner.prevWidth = newWidth;
     banner.fill.setSize(newWidth, TEAM_BAR_HEIGHT);
-  }
-
-  private showQTE(onComplete: (multiplier: number) => void): void {
-    const cx = GAME_WIDTH / 2;
-    const cy = GAME_HEIGHT / 2;
-    let elapsed = 0;
-    let completed = false;
-
-    const scrim = this.add
-      .rectangle(cx, cy, GAME_WIDTH, GAME_HEIGHT, 0x00_00_00)
-      .setAlpha(0.55)
-      .setDepth(QTE_DEPTH)
-      .setInteractive();
-
-    const panel = this.add
-      .rectangle(cx, cy, QTE_PANEL_W, QTE_PANEL_H, GAME_PALETTE.MAUVE)
-      .setDepth(QTE_DEPTH);
-
-    const title = this.add
-      .bitmapText(cx, cy - 16, GAME_BITMAP_FONT, "DEFEND!", 16)
-      .setOrigin(0.5)
-      .setDepth(QTE_DEPTH);
-
-    const barLeft = cx - QTE_BAR_W / 2;
-    this.add
-      .rectangle(cx, cy + 4, QTE_BAR_W, QTE_BAR_H, 0x00_00_00)
-      .setAlpha(0.4)
-      .setDepth(QTE_DEPTH);
-    const bar = this.add
-      .rectangle(barLeft, cy + 4, QTE_BAR_W, QTE_BAR_H, GAME_PALETTE.GREEN)
-      .setOrigin(0, 0.5)
-      .setDepth(QTE_DEPTH);
-
-    const hint = this.add
-      .bitmapText(cx, cy + 20, GAME_BITMAP_FONT, "PRESS SPACE", 8)
-      .setOrigin(0.5)
-      .setDepth(QTE_DEPTH);
-
-    const resultText = this.add
-      .bitmapText(cx, cy + 20, GAME_BITMAP_FONT, "", 8)
-      .setOrigin(0.5)
-      .setDepth(QTE_DEPTH + 1)
-      .setVisible(false);
-
-    const destroyAll = () => {
-      scrim.destroy();
-      panel.destroy();
-      title.destroy();
-      bar.destroy();
-      hint.destroy();
-      resultText.destroy();
-    };
-
-    const complete = (multiplier: number) => {
-      if (completed) return;
-      completed = true;
-      ticker.destroy();
-      keySpace?.destroy();
-
-      const label =
-        multiplier >= 1.8
-          ? "PERFECT!"
-          : multiplier >= 1.4
-            ? "GREAT!"
-            : multiplier >= 1.1
-              ? "GOOD"
-              : "TOO SLOW";
-      hint.setVisible(false);
-      resultText.setText(label).setVisible(true);
-
-      this.time.delayedCall(QTE_RESULT_HOLD_MS, () => {
-        if (!this.sys.isActive()) return;
-        destroyAll();
-        onComplete(multiplier);
-      });
-    };
-
-    const keySpace = this.input.keyboard?.addKey(
-      Phaser.Input.Keyboard.KeyCodes.SPACE,
-    );
-    keySpace?.on("down", () => {
-      complete(1 + Math.max(0, 1 - elapsed / QTE_DURATION_MS));
-    });
-    scrim.on("pointerdown", () => {
-      complete(1 + Math.max(0, 1 - elapsed / QTE_DURATION_MS));
-    });
-
-    const ticker = this.time.addEvent({
-      delay: 16,
-      loop: true,
-      callback: () => {
-        if (!this.sys.isActive()) return;
-        elapsed += 16;
-        const ratio = Math.max(0, 1 - elapsed / QTE_DURATION_MS);
-        bar.setSize(ratio * QTE_BAR_W, QTE_BAR_H);
-        bar.setFillStyle(
-          ratio > 0.6
-            ? GAME_PALETTE.GREEN
-            : ratio > 0.3
-              ? GAME_PALETTE.ORANGE
-              : GAME_PALETTE.RED,
-        );
-        if (elapsed >= QTE_DURATION_MS) complete(1);
-      },
-    });
   }
 
   private showToast(message: string): void {

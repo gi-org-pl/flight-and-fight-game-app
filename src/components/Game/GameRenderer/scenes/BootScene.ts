@@ -1,7 +1,17 @@
 import Phaser from "phaser";
-import homeBg from "@/assets/images/home/main-bg.png?url";
+import homeBgLayer1 from "@/assets/images/home/layer-1.png?url";
+import homeBgLayer2 from "@/assets/images/home/layer-2.png?url";
+import homeBgLayer3 from "@/assets/images/home/layer-3.png?url";
+import homeBgLayer4 from "@/assets/images/home/layer-4.png?url";
+import lobbyMp3 from "@/assets/sounds/lobby.mp3?url";
+import fightMp3 from "@/assets/sounds/fight.mp3?url";
 import { getCharacters } from "@/services/api/characters";
-import { GAME_FONT, HOME_BG_KEY } from "../GameRenderer.constants";
+import {
+  GAME_FONT,
+  HOME_BG_LAYER_KEYS,
+  MUSIC_KEY_FIGHT,
+  MUSIC_KEY_LOBBY,
+} from "../GameRenderer.constants";
 import {
   loadAvatarAssets,
   loadSpriteAnimations,
@@ -20,7 +30,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image(HOME_BG_KEY, homeBg);
+    const layerUrls = [homeBgLayer1, homeBgLayer2, homeBgLayer3, homeBgLayer4];
+    for (const [i, url] of layerUrls.entries()) {
+      this.load.image(HOME_BG_LAYER_KEYS[i], url);
+    }
+    this.load.audio(MUSIC_KEY_LOBBY, lobbyMp3);
+    this.load.audio(MUSIC_KEY_FIGHT, fightMp3);
     loadAvatarAssets(this);
   }
 

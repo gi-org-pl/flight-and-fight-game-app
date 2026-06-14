@@ -24,6 +24,9 @@ import { toDisplayName } from "../utils/character/toDisplayName";
 import { darkenColor } from "../utils/color/darkenColor";
 import { toggleSelection } from "../utils/selection/toggleSelection";
 import { createBitmapText } from "../utils/text/createBitmapText";
+import { MUSIC_KEY_LOBBY } from "../GameRenderer.constants";
+import { playCharacterSelectSound } from "../utils/sound/playCharacterSelectSound";
+import { playMusic } from "../utils/sound/musicManager";
 import { createButton } from "../utils/widgets/createButton";
 import { createPanel } from "../utils/widgets/createPanel";
 import {
@@ -162,6 +165,7 @@ export class CharacterSelectScene extends Phaser.Scene {
   }
 
   create(data: CharacterSelectSceneData): void {
+    playMusic(this, MUSIC_KEY_LOBBY);
     this.add.rectangle(
       GAME_WIDTH / 2,
       GAME_HEIGHT / 2,
@@ -467,6 +471,7 @@ export class CharacterSelectScene extends Phaser.Scene {
     const card = this.cards.get(character.type);
     if (card && selectionChanged) {
       const nowSelected = this.selected.includes(character.type);
+      if (nowSelected) playCharacterSelectSound(this);
       const fromColor = Phaser.Display.Color.IntegerToColor(
         nowSelected ? GAME_PALETTE.LAVENDER : GAME_PALETTE.ROSE,
       );

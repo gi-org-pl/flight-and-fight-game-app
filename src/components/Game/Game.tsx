@@ -1,17 +1,24 @@
-import { useState } from "react";
-import { QTE_DEFINITIONS } from "@/constants/qte";
+import { useEffect, useState } from "react";
+import { qteBridge } from "@/services/game/qteBridge";
 import type { QteDefinition } from "@/types/qte";
 import QteOverlay from "../qte/QteOverlay/QteOverlay";
 import GameBackground from "./GameBackground/GameBackground";
 import GameRenderer from "./GameRenderer/GameRenderer";
 
-const Game = () => {
-  const [activeQte, setActiveQte] = useState<QteDefinition | null>(null);
+interface ActiveQte {
+  definition: QteDefinition;
+  onResult: (quality: number) => void;
+}
 
-  const handleRandomQte = () => {
-    const index = Math.floor(Math.random() * QTE_DEFINITIONS.length);
-    setActiveQte(QTE_DEFINITIONS[index]);
-  };
+const Game = () => {
+  const [activeQte, setActiveQte] = useState<ActiveQte | null>(null);
+
+  useEffect(() => {
+    qteBridge.register((definition, onResult) => {
+      setActiveQte({ definition, onResult });
+    });
+    return () => qteBridge.unregister();
+  }, []);
 
   return (
     <div className="w-full h-lvh bg-color-blush flex items-center justify-center bg-blush relative">
@@ -30,7 +37,13 @@ const Game = () => {
         </div>
       </div>
       {activeQte && (
-        <QteOverlay definition={activeQte} onClose={() => setActiveQte(null)} />
+        <QteOverlay
+          definition={activeQte.definition}
+          onClose={(quality) => {
+            activeQte.onResult(quality);
+            setActiveQte(null);
+          }}
+        />
       )}
     </div>
   );

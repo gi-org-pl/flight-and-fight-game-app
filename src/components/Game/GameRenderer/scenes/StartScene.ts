@@ -1,24 +1,23 @@
-import Phaser from "phaser";
+import Phaser from 'phaser';
 import {
   GAME_HEIGHT,
   GAME_PALETTE,
   GAME_WIDTH,
-  HOME_BG_KEY,
-} from "../GameRenderer.constants";
-import type { StartSceneData } from "../GameRenderer.types";
-import { createBitmapText } from "../utils/text/createBitmapText";
-import { createButton } from "../utils/widgets/createButton";
+  HOME_BG_LAYER_KEYS,
+} from '../GameRenderer.constants';
+import type { StartSceneData } from '../GameRenderer.types';
+import { createButton } from '../utils/widgets/createButton';
 import {
   CHARACTER_SELECT_SCENE_KEY,
   CONNECT_SCENE_KEY,
   START_SCENE_KEY,
-} from "./sceneKeys";
+} from './sceneKeys';
 
 const TITLE_Y = 55;
 const BUTTONS_Y = GAME_HEIGHT - 45;
 
 export class StartScene extends Phaser.Scene {
-  private characters: StartSceneData["characters"] = [];
+  private characters: StartSceneData['characters'] = [];
 
   constructor() {
     super(START_SCENE_KEY);
@@ -28,47 +27,35 @@ export class StartScene extends Phaser.Scene {
     this.characters = data.characters;
     this.cameras.main.fadeIn(350, 174, 158, 225);
 
-    const bg = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, HOME_BG_KEY);
+    const bgLayers = HOME_BG_LAYER_KEYS.map((key) =>
+      this.add
+        .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, key)
+        .setDisplaySize(GAME_WIDTH, GAME_HEIGHT),
+    );
+    const bg = this.add.container(0, 0, bgLayers);
     bg.setAlpha(0);
     this.tweens.add({
       targets: bg,
       alpha: 1,
       duration: 600,
-      ease: "Sine.easeOut",
+      ease: 'Sine.easeOut',
     });
 
-    const title = createBitmapText(
-      this,
-      GAME_WIDTH / 2,
-      TITLE_Y - 20,
-      "Flight and Fight",
-      20,
-    );
-    title.setAlpha(0);
+    const layer3 = bgLayers[2];
     this.tweens.add({
-      targets: title,
-      alpha: 1,
-      y: TITLE_Y,
-      duration: 650,
-      ease: "Back.easeOut",
-      delay: 100,
-      onComplete: () => {
-        this.tweens.add({
-          targets: title,
-          y: TITLE_Y - 3,
-          duration: 1800,
-          ease: "Sine.easeInOut",
-          yoyo: true,
-          repeat: -1,
-        });
-      },
+      targets: layer3,
+      y: GAME_HEIGHT / 2 - 4,
+      duration: 2000,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
     });
 
     const singleBtn = createButton(
       this,
       GAME_WIDTH / 2 - 115,
       BUTTONS_Y,
-      "Single Player",
+      'Single Player',
       {
         width: 200,
         height: 40,
@@ -76,7 +63,7 @@ export class StartScene extends Phaser.Scene {
         fontSize: 12,
         onClick: () =>
           this.transitionTo(CHARACTER_SELECT_SCENE_KEY, {
-            mode: "single",
+            mode: 'single',
             characters: this.characters,
           }),
       },
@@ -87,14 +74,14 @@ export class StartScene extends Phaser.Scene {
       alpha: 1,
       y: BUTTONS_Y,
       duration: 500,
-      ease: "Back.easeOut",
+      ease: 'Back.easeOut',
       delay: 400,
       onComplete: () => {
         this.tweens.add({
           targets: singleBtn,
           y: BUTTONS_Y - 4,
           duration: 2000,
-          ease: "Sine.easeInOut",
+          ease: 'Sine.easeInOut',
           yoyo: true,
           repeat: -1,
         });
@@ -105,7 +92,7 @@ export class StartScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 + 115,
       BUTTONS_Y,
-      "Multiplayer",
+      'Multiplayer',
       {
         width: 200,
         height: 40,
@@ -113,7 +100,7 @@ export class StartScene extends Phaser.Scene {
         fontSize: 12,
         onClick: () =>
           this.transitionTo(CONNECT_SCENE_KEY, {
-            mode: "multiplayer",
+            mode: 'multiplayer',
             characters: this.characters,
           }),
       },
@@ -124,14 +111,14 @@ export class StartScene extends Phaser.Scene {
       alpha: 1,
       y: BUTTONS_Y,
       duration: 500,
-      ease: "Back.easeOut",
+      ease: 'Back.easeOut',
       delay: 540,
       onComplete: () => {
         this.tweens.add({
           targets: multiBtn,
           y: BUTTONS_Y - 4,
           duration: 2200,
-          ease: "Sine.easeInOut",
+          ease: 'Sine.easeInOut',
           yoyo: true,
           repeat: -1,
         });
