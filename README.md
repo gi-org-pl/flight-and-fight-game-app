@@ -1,10 +1,21 @@
-# Vite Project Boilerplate
+# Flight n' Fight
 
-## Repository contents
+A pixel-art turn-based multiplayer fighting game where you pick a team of bird fighters and battle your opponent — online or against the computer.
 
-Repository contains boilerplate project using Vite.
+## Game concept
 
-Project is using tools in versions listed below:
+Players assemble a team of **5 bird fighters** from a roster of 10 unique characters (Iris, Zephyr, Wendy, Skye, Sunny, Aura, Neil, Gale, Thora, Vega). Each fighter has stats — **HP, PWR, INT, DEF** — and a **type** (e.g. Dark, Fire, Electric…). The order you pick your team sets your fight sequence.
+
+Battles are turn-based: each round your active fighter faces the opponent's active fighter in the centre of the arena. You choose to **Attack** or unleash a **Superpower** (costs stars). Fighters are defeated when HP reaches zero; the next fighter in your sequence steps in. The team that eliminates all five opponents wins.
+
+### Modes
+
+| Mode | Description |
+| --- | --- |
+| Single Player | Fight against a computer-controlled opponent |
+| Multiplayer | Fight against another player online (WebSocket) |
+
+## Tech stack
 
 | Technology | Version |
 | ---------- | ------- |
@@ -26,25 +37,9 @@ Project's main dependencies are listed below.
 | Zustand      | ^5.x    |
 | Storybook    | ^10.x   |
 
-### Package descriptions
+## Setting the project up
 
-- **Vite** - Next-generation frontend build tool providing fast development experience with instant HMR and optimized production builds
-- **React** - JavaScript library for building user interfaces
-- **Tailwind CSS** - Utility-first CSS framework for rapid UI development
-- **Zod** - TypeScript-first schema validation library for runtime type checking
-- **Axios** - Promise-based HTTP client for making API requests
-- **Vitest** - Fast unit testing framework powered by Vite
-- **Playwright** - End-to-end testing framework for reliable cross-browser testing
-- **Zustand** - Lightweight state management library for React applications
-- **Storybook** - UI development environment and playground for building, previewing, and testing isolated components interactively
-
-## Infrastructure
-
-This is a frontend-only boilerplate that runs locally using Vite development server.
-
-## Setting project up
-
-This app uses Node.js and Yarn package manager. In order to set up project, follow these steps:
+This app requires Node.js and Yarn. Follow these steps:
 
 1. Install Node.js (v24.x or higher):
    - Download from [nodejs.org](https://nodejs.org/)
@@ -56,19 +51,14 @@ This app uses Node.js and Yarn package manager. In order to set up project, foll
    npm install --global yarn@^1.22
    ```
 
-3. Clone project by running:
+3. Clone the repository:
 
    ```shell
    git clone <your-repository-url>
+   cd flight-and-fight-game
    ```
 
-4. Navigate to the project directory:
-
-   ```shell
-   cd vite-project-boilerplate
-   ```
-
-5. Install dependencies using Yarn:
+4. Install dependencies:
 
    ```shell
    yarn install
@@ -76,13 +66,11 @@ This app uses Node.js and Yarn package manager. In order to set up project, foll
 
 ## Running the project
 
-To start the development server:
-
 ```bash
 yarn dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) with your browser to see the result.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Available scripts
 
@@ -154,6 +142,10 @@ Run Storybook with:
 yarn storybook        # Start Storybook development server (http://localhost:6006)
 yarn storybook:build  # Build Storybook for production deployment
 ```
+
+## Credits
+
+ - [Sakura Girl](https://soundcloud.com/sakuragirl_official) - Soundtrack credits
 
 ## Resources
 

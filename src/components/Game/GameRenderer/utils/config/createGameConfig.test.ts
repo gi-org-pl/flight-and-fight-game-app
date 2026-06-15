@@ -1,10 +1,6 @@
 import Phaser from "phaser";
 import { describe, expect, it } from "vitest";
-import {
-  BACKGROUND_COLOR,
-  GAME_HEIGHT,
-  GAME_WIDTH,
-} from "../../GameRenderer.constants";
+import { GAME_HEIGHT, GAME_WIDTH } from "../../GameRenderer.constants";
 import { BootScene } from "../../scenes/BootScene";
 import { CharacterSelectScene } from "../../scenes/CharacterSelectScene";
 import { ConnectScene } from "../../scenes/ConnectScene";
@@ -23,7 +19,7 @@ describe("createGameConfig", () => {
       expect(config.parent).toBe(parent);
       expect(config.width).toBe(GAME_WIDTH);
       expect(config.height).toBe(GAME_HEIGHT);
-      expect(config.backgroundColor).toBe(BACKGROUND_COLOR);
+      expect(config.transparent).toBe(true);
     });
 
     it("registers every scene in user-path order", () => {

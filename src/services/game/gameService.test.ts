@@ -71,22 +71,22 @@ describe("createGameService", () => {
   });
 
   describe("attack", () => {
-    it("emits the attack event with the payload", () => {
-      const service = createGameService("p1", "s1");
+    it("emits the attack event", () => {
       const payload = {
         attackingCharacter: "IRIS" as const,
         attackedCharacter: "ZEPHYR" as const,
-        quickTimeEventMultiplier: 1.5,
+        quickTimeEventMultiplier: 1,
       };
+      const service = createGameService("p1", "s1");
       service.attack(payload);
       expect(mockSocket.emit).toHaveBeenCalledWith("attack", payload);
     });
   });
 
   describe("defend", () => {
-    it("emits the defend event with the payload", () => {
+    it("emits the defend event", () => {
+      const payload = { quickTimeEventMultiplier: 1.5 };
       const service = createGameService("p1", "s1");
-      const payload = { quickTimeEventMultiplier: 1.2 };
       service.defend(payload);
       expect(mockSocket.emit).toHaveBeenCalledWith("defend", payload);
     });

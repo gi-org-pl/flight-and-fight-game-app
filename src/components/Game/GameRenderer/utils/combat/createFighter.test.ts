@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CharacterResponse } from "@/services/api/schemas/character";
-import { createFighter, maxHealthFor } from "./createFighter";
+import { createFighter } from "./createFighter";
 
 const character: CharacterResponse = {
   type: "IRIS",
@@ -13,7 +13,7 @@ describe("createFighter", () => {
     it("starts the fighter at full derived health", () => {
       const fighter = createFighter(character);
 
-      expect(fighter.maxHealth).toBe(maxHealthFor(character));
+      expect(fighter.maxHealth).toBe(character.stats.health);
       expect(fighter.health).toBe(fighter.maxHealth);
     });
 
@@ -28,16 +28,16 @@ describe("createFighter", () => {
 
   describe("when comparing characters with different health stats", () => {
     it("gives the higher-health fighter a larger health pool", () => {
-      const tanky = maxHealthFor({
+      const tanky = createFighter({
         ...character,
         stats: { ...character.stats, health: 10 },
       });
-      const fragile = maxHealthFor({
+      const fragile = createFighter({
         ...character,
         stats: { ...character.stats, health: 1 },
       });
 
-      expect(tanky).toBeGreaterThan(fragile);
+      expect(tanky.maxHealth).toBeGreaterThan(fragile.maxHealth);
     });
   });
 });

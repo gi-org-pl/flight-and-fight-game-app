@@ -18,6 +18,7 @@ describe("createGameSocket", () => {
       expect(io).toHaveBeenCalledWith("http://localhost:3000/game", {
         auth: { token: "player-1", sessionId: "session-abc" },
         autoConnect: false,
+        transports: ["websocket"],
       });
     });
 
