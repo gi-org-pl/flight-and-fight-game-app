@@ -1,6 +1,5 @@
 import { Outlet, Scripts } from "react-router";
-
-import "./index.css";
+import stylesheetHref from "./index.css?url";
 
 export default function App() {
   return (
@@ -16,6 +15,7 @@ export default function App() {
           rel="stylesheet"
           href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css"
         />
+        <link rel="stylesheet" href={stylesheetHref} />
       </head>
       <body>
         <Outlet />
