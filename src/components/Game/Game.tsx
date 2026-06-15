@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import { qteBridge } from "@/services/game/qteBridge";
 import type { QteDefinition } from "@/types/qte";
+import { useEffect, useState } from "react";
 import QteOverlay from "../qte/QteOverlay/QteOverlay";
 import GameBackground from "./GameBackground/GameBackground";
 import GameRenderer from "./GameRenderer/GameRenderer";
@@ -32,7 +32,7 @@ const Game = () => {
         </div>
         <div className="flex justify-between items-center z-10">
           <div className="title text-white">
-            Fight or Flight | © Generacja Innowacja
+            Flight and Fight | © Generacja Innowacja
           </div>
         </div>
       </div>
