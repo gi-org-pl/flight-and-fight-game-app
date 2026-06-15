@@ -2,18 +2,22 @@ import { io, type Socket } from "socket.io-client";
 import type {
   AttackActionPayload,
   AttackedPayload,
-  CharacterList,
+  CharacterDied,
   DefendActionPayload,
   Exception,
+  GameFinished,
+  PlayerRosters,
   Session,
 } from "@/services/game/schemas/game";
 
 export interface ServerToClientEvents {
   session: (payload: Session) => void;
   attacked: (payload: AttackedPayload) => void;
-  charactersUpdated: (payload: CharacterList) => void;
+  charactersUpdated: (payload: PlayerRosters) => void;
   turnChanged: (payload: Session) => void;
   ready: (payload: Session) => void;
+  characterDied: (payload: CharacterDied) => void;
+  gameFinished: (payload: GameFinished) => void;
   exception: (payload: Exception) => void;
 }
 

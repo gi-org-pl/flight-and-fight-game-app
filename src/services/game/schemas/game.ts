@@ -23,6 +23,8 @@ export type Session = z.infer<typeof sessionSchema>;
 
 export const attackedPayloadSchema = z.object({
   attackingPlayerId: z.string(),
+  attackingCharacter: characterTypeSchema.optional(),
+  attackedCharacter: characterTypeSchema.optional(),
 });
 
 export type AttackedPayload = z.infer<typeof attackedPayloadSchema>;
@@ -53,7 +55,9 @@ export interface DefendActionPayload {
 
 export const characterSchema = z.object({
   type: characterTypeSchema,
+  superpower: z.string().optional(),
   stats: characterStatsResponseSchema,
+  isDead: z.boolean().optional(),
 });
 
 export type Character = z.infer<typeof characterSchema>;
@@ -62,14 +66,41 @@ export const characterListSchema = z.array(characterSchema);
 
 export type CharacterList = z.infer<typeof characterListSchema>;
 
+export const playerRosterSchema = z.object({
+  playerId: z.string(),
+  characters: characterListSchema,
+});
+
+export type PlayerRoster = z.infer<typeof playerRosterSchema>;
+
+export const playerRostersSchema = z.array(playerRosterSchema);
+
+export type PlayerRosters = z.infer<typeof playerRostersSchema>;
+
+export const characterDiedSchema = z.object({
+  playerId: z.string(),
+  character: characterTypeSchema,
+});
+
+export type CharacterDied = z.infer<typeof characterDiedSchema>;
+
+export const gameFinishedSchema = z.object({
+  winnerId: z.string(),
+  loserId: z.string(),
+});
+
+export type GameFinished = z.infer<typeof gameFinishedSchema>;
+
 export const exceptionSchema = z.object({
   status: z.string(),
   message: z.string(),
   cause: z
     .object({
       pattern: z.string(),
+      data: z.unknown().optional(),
     })
     .optional(),
+  violations: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 export type Exception = z.infer<typeof exceptionSchema>;
