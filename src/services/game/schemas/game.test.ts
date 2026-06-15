@@ -34,10 +34,10 @@ describe("sessionSchema", () => {
     });
   });
 
-  describe("when state is invalid", () => {
+  describe("when state is not a string", () => {
     it("throws a ZodError", () => {
       expect(() =>
-        sessionSchema.parse({ ...validSession, state: "UNKNOWN" }),
+        sessionSchema.parse({ ...validSession, state: 42 }),
       ).toThrow();
     });
   });
