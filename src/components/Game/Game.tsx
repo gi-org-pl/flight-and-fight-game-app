@@ -32,7 +32,7 @@ const Game = () => {
         </div>
         <div className="flex justify-between items-center z-10">
           <div className="title text-white">
-            Fight or Flight | © Generacja Innowacja
+            Flight and Fight | © Generacja Innowacja
           </div>
         </div>
       </div>
