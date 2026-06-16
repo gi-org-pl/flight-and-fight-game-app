@@ -1,6 +1,6 @@
+import { useEffect, useState } from "react";
 import { qteBridge } from "@/services/game/qteBridge";
 import type { QteDefinition } from "@/types/qte";
-import { useEffect, useState } from "react";
 import QteOverlay from "../qte/QteOverlay/QteOverlay";
 import GameBackground from "./GameBackground/GameBackground";
 import GameRenderer from "./GameRenderer/GameRenderer";
