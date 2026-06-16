@@ -28,7 +28,7 @@ const Game = () => {
           className="nes-container with-title is-dark is-centered"
           style={{ padding: 0, background: "transparent" }}
         >
-          <GameRenderer className="w-[960px] h-[540px]" />
+          <GameRenderer />
         </div>
         <div className="flex justify-between items-center z-10">
           <div className="title text-white">

@@ -23,7 +23,13 @@ const GameRenderer = ({ className }: Props) => {
     };
   }, []);
 
-  return <div ref={containerRef} className={className} />;
+  return (
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ width: 960, height: 540 }}
+    />
+  );
 };
 
 export default GameRenderer;
